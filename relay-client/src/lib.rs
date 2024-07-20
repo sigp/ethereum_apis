@@ -2,14 +2,10 @@ use relay_api_types::{
     GetDeliveredPayloadsQueryParams, GetDeliveredPayloadsResponse, GetReceivedBidsQueryParams,
     GetReceivedBidsResponse, GetValidatorRegistrationQueryParams, GetValidatorRegistrationResponse,
     GetValidatorsResponse, SubmitBlockQueryParams, SubmitBlockRequest, SubmitBlockResponse,
-    ValidatorsResponse,
 };
 use reqwest::Client;
 use serde::Deserialize;
-use types::{
-    eth_spec::EthSpec, Address, PublicKeyBytes, Signature, SignedValidatorRegistrationData, Slot,
-    ValidatorRegistrationData,
-};
+use types::eth_spec::EthSpec;
 
 #[derive(Debug)]
 pub enum Error {

@@ -1,3 +1,4 @@
+use beacon_api_types::BlobsBundle;
 use serde::{Deserialize, Serialize};
 use serde_utils::quoted_u64::Quoted;
 use ssz_derive::{Decode, Encode};
@@ -32,6 +33,8 @@ pub struct SubmitBlockRequest<E: EthSpec> {
     #[superstruct(flatten)]
     execution_payload: ExecutionPayload<E>,
     signature: Signature,
+    #[superstruct(only(Deneb))]
+    blobs_bundle: BlobsBundle<E>,
 }
 
 impl<E: EthSpec> ssz::Decode for SubmitBlockRequest<E> {
@@ -130,10 +133,6 @@ pub struct BidTraceV1 {
     pub gas_used: u64,
     #[serde(with = "serde_utils::quoted_u256")]
     pub value: Uint256,
-    #[serde(with = "serde_utils::quoted_u64")]
-    pub block_number: u64,
-    #[serde(with = "serde_utils::quoted_u64")]
-    pub num_tx: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
