@@ -1,7 +1,6 @@
 pub use relay_api_types::*;
 use reqwest::Client;
 use serde::Deserialize;
-use types::eth_spec::EthSpec;
 
 #[derive(Debug)]
 pub enum Error {

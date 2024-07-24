@@ -2,10 +2,10 @@ use beacon_api_types::BlobsBundle;
 use serde::{Deserialize, Serialize};
 use serde_utils::quoted_u64::Quoted;
 use ssz_derive::{Decode, Encode};
-use types::{
+pub use types::{
     superstruct, Address, EthSpec, ExecutionBlockHash, ExecutionPayloadBellatrix,
-    ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra, PublicKeyBytes,
-    Signature, SignedValidatorRegistrationData, Slot, Uint256,
+    ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra, MainnetEthSpec,
+    MinimalEthSpec, PublicKeyBytes, Signature, SignedValidatorRegistrationData, Slot, Uint256,
 };
 
 // Builder API requests
