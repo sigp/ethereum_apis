@@ -178,6 +178,6 @@ pub type GetValidatorsResponse = Response<Vec<ValidatorsResponse>>;
 pub type SubmitBlockResponse = Response<()>;
 
 // Data API response types
-pub type GetDeliveredPayloadsResponse = Response<Vec<BidTraceV2WithTimestamp>>;
-pub type GetReceivedBidsResponse = Response<Vec<BidTraceV2>>;
+pub type GetDeliveredPayloadsResponse = Response<Vec<BidTraceV2>>;
+pub type GetReceivedBidsResponse = Response<Vec<BidTraceV2WithTimestamp>>;
 pub type GetValidatorRegistrationResponse = Response<SignedValidatorRegistrationData>;
