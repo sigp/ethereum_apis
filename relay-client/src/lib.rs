@@ -16,6 +16,7 @@ impl From<reqwest::Error> for Error {
     }
 }
 
+#[derive(Clone)]
 pub struct RelayClient {
     client: Client,
     base_url: String,
