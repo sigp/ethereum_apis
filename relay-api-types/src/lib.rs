@@ -89,7 +89,7 @@ pub struct GetDeliveredPayloadsQueryParams {
     pub order_by: Option<OrderBy>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GetReceivedBidsQueryParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub slot: Option<Slot>,
