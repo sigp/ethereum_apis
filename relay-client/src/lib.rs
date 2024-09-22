@@ -1,5 +1,5 @@
 pub use relay_api_types::*;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde::Deserialize;
 
 #[derive(Debug)]
@@ -19,11 +19,11 @@ impl From<reqwest::Error> for Error {
 #[derive(Clone)]
 pub struct RelayClient {
     client: Client,
-    base_url: String,
+    base_url: Url,
 }
 
 impl RelayClient {
-    pub fn new(base_url: String) -> Self {
+    pub fn new(base_url: Url) -> Self {
         Self {
             client: Client::new(),
             base_url,
@@ -55,10 +55,13 @@ impl RelayClient {
     where
         E: EthSpec,
     {
-        let url = format!("{}/relay/v1/builder/blocks", self.base_url);
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .unwrap()
+            .extend(&["relay", "v1", "builder", "blocks"]);
         let response = self
             .client
-            .post(&url)
+            .post(url)
             .query(&query_params)
             .json(&body)
             .send()
@@ -71,8 +74,11 @@ impl RelayClient {
     where
         E: EthSpec,
     {
-        let url = format!("{}/relay/v1/builder/validators", self.base_url);
-        let response = self.client.get(&url).send().await?;
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .unwrap()
+            .extend(&["relay", "v1", "builder", "validators"]);
+        let response = self.client.get(url).send().await?;
 
         self.build_response(response).await
     }
@@ -81,11 +87,15 @@ impl RelayClient {
         &self,
         query_params: GetDeliveredPayloadsQueryParams,
     ) -> Result<GetDeliveredPayloadsResponse, Error> {
-        let url = format!(
-            "{}/relay/v1/data/bidtraces/proposer_payload_delivered",
-            self.base_url
-        );
-        let response = self.client.get(&url).query(&query_params).send().await?;
+        let mut url = self.base_url.clone();
+        url.path_segments_mut().unwrap().extend(&[
+            "relay",
+            "v1",
+            "data",
+            "bidtraces",
+            "proposer_payload_delivered",
+        ]);
+        let response = self.client.get(url).query(&query_params).send().await?;
 
         self.build_response(response).await
     }
@@ -94,11 +104,15 @@ impl RelayClient {
         &self,
         query_params: GetReceivedBidsQueryParams,
     ) -> Result<GetReceivedBidsResponse, Error> {
-        let url = format!(
-            "{}/relay/v1/data/bidtraces/builder_blocks_received",
-            self.base_url
-        );
-        let response = self.client.get(&url).query(&query_params).send().await?;
+        let mut url = self.base_url.clone();
+        url.path_segments_mut().unwrap().extend(&[
+            "relay",
+            "v1",
+            "data",
+            "bidtraces",
+            "builder_blocks_received",
+        ]);
+        let response = self.client.get(url).query(&query_params).send().await?;
 
         self.build_response(response).await
     }
@@ -107,8 +121,11 @@ impl RelayClient {
         &self,
         query_params: GetValidatorRegistrationQueryParams,
     ) -> Result<GetValidatorRegistrationResponse, Error> {
-        let url = format!("{}/relay/v1/data/validator_registration", self.base_url);
-        let response = self.client.get(&url).query(&query_params).send().await?;
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .unwrap()
+            .extend(&["relay", "v1", "data", "validator_registration"]);
+        let response = self.client.get(url).query(&query_params).send().await?;
 
         self.build_response(response).await
     }
