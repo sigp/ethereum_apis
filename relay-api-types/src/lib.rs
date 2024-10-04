@@ -110,11 +110,25 @@ pub struct GetValidatorRegistrationQueryParams {
 
 // Builder API responses
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Filtering {
+    Regional,
+    Global,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ValidatorPreferences {
+    filtering: Filtering,
+    trusted_builders: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ValidatorsResponse {
     pub slot: Slot,
     #[serde(with = "serde_utils::quoted_u64")]
     pub validator_index: u64,
     pub entry: SignedValidatorRegistrationData,
+    pub preferences: Option<ValidatorPreferences>,
 }
 
 // Data API responses
