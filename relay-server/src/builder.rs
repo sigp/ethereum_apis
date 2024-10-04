@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use relay_api_types::{
     ErrorResponse, GetValidatorsResponse, SubmitBlockQueryParams, SubmitBlockRequest,
-    SubmitBlockResponse,
 };
 use types::eth_spec::EthSpec;
 
@@ -20,5 +19,5 @@ pub trait Builder<E: EthSpec> {
         &self,
         query_params: SubmitBlockQueryParams,
         body: SubmitBlockRequest<E>,
-    ) -> Result<SubmitBlockResponse, ErrorResponse>;
+    ) -> Result<(), ErrorResponse>;
 }

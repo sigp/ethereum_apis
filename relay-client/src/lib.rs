@@ -52,7 +52,7 @@ impl RelayClient {
         &self,
         query_params: SubmitBlockQueryParams,
         body: SubmitBlockRequest<E>,
-    ) -> Result<SubmitBlockResponse, Error>
+    ) -> Result<(), Error>
     where
         E: EthSpec,
     {

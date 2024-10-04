@@ -120,10 +120,10 @@ pub struct GetValidatorRegistrationQueryParams {
     map_into(ExecutionPayloadHeader),
     map_ref_into(ExecutionPayloadHeader)
 )]
-#[derive(Debug, Clone, Serialize, Deserialize, Encode)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
-struct HeaderSubmission<E: EthSpec> {
+pub struct HeaderSubmission<E: EthSpec> {
     bid_trace: BidTraceV1,
     #[superstruct(flatten)]
     execution_payload_header: ExecutionPayloadHeader<E>,
@@ -140,10 +140,10 @@ struct HeaderSubmission<E: EthSpec> {
     map_into(ExecutionPayloadHeader),
     map_ref_into(ExecutionPayloadHeader)
 )]
-#[derive(Debug, Clone, Serialize, Deserialize, Encode)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
-struct SignedHeaderSubmission<E: EthSpec> {
+pub struct SignedHeaderSubmission<E: EthSpec> {
     #[superstruct(flatten)]
     message: HeaderSubmission<E>,
     signature: Signature,
@@ -245,7 +245,6 @@ pub fn custom_internal_err(message: String) -> ErrorResponse {
 
 // Builder API response types
 pub type GetValidatorsResponse = Vec<ValidatorsResponse>;
-pub type SubmitBlockResponse = ();
 
 // Data API response types
 pub type GetDeliveredPayloadsResponse = Vec<BidTraceV2>;

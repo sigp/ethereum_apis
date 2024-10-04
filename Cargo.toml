@@ -11,12 +11,13 @@ members = [
 
 [workspace.dependencies]
 async-trait = "0.1"
-axum = "0.7"
+axum = { version = "0.7", features = ["ws"] }
 bytes = "1.6"
 eth2 = { git = "https://github.com/realbigsean/lighthouse.git", rev = "10ce60633859ab4f20308ef42bb88e219e09fee5" }
 ethereum_serde_utils = "0.5.2"
 ethereum_ssz = "0.5.4"
 ethereum_ssz_derive = "0.5.4"
+futures = "0.3.30"
 http = "1"
 reqwest = { version = "0.12.5", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }

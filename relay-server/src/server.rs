@@ -10,24 +10,30 @@ use bytes::Bytes;
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use relay_api_types::{
     ErrorResponse, GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
-    GetValidatorRegistrationQueryParams, SubmitBlockQueryParams, SubmitBlockRequest,
+    GetValidatorRegistrationQueryParams, SignedHeaderSubmission, SubmitBlockQueryParams,
+    SubmitBlockRequest,
 };
 use serde::Serialize;
 use tracing::error;
 use types::eth_spec::EthSpec;
 
-use crate::{builder::Builder, data::Data};
+use crate::{builder::Builder, data::Data, optimistic_v2::OptimisticV2};
 
 /// Setup API Server.
 pub fn new<I, A, E>(api_impl: I) -> Router
 where
     E: EthSpec,
     I: AsRef<A> + Clone + Send + Sync + 'static,
-    A: Builder<E> + Data + 'static,
+    A: Builder<E> + Data + OptimisticV2<E> + 'static,
 {
     // build our application with a route
     Router::new()
         .route("/relay/v1/builder/blocks", post(submit_block::<I, A, E>))
+        .route(
+            "/relay/v1/builder/blocks_optimistic_v2",
+            post(submit_block_optimistic_v2::<I, A, E>),
+        )
+        .route("/relay/v1/builder/headers", post(submit_header::<I, A, E>))
         .route(
             "/relay/v1/builder/validators",
             get(get_validators::<I, A, E>),
@@ -132,6 +138,41 @@ where
     A: Builder<E>,
 {
     let result = api_impl.as_ref().submit_block(query_params, body).await;
+    build_response(result).await
+}
+
+/// SubmitBlockOptimisticV2 - POST /relay/v1/builder/blocks_optimistic_v2
+#[tracing::instrument(skip_all)]
+async fn submit_block_optimistic_v2<I, A, E>(
+    Query(query_params): Query<SubmitBlockQueryParams>,
+    State(api_impl): State<I>,
+    JsonOrSsz(body): JsonOrSsz<SubmitBlockRequest<E>>,
+) -> Result<Response<Body>, StatusCode>
+where
+    E: EthSpec,
+    I: AsRef<A> + Send + Sync,
+    A: OptimisticV2<E>,
+{
+    let result = api_impl
+        .as_ref()
+        .submit_block_optimistic_v2(query_params, body)
+        .await;
+    build_response(result).await
+}
+
+/// SubmitHeader - POST /relay/v1/builder/headers
+#[tracing::instrument(skip_all)]
+async fn submit_header<I, A, E>(
+    Query(query_params): Query<SubmitBlockQueryParams>,
+    State(api_impl): State<I>,
+    JsonOrSsz(body): JsonOrSsz<SignedHeaderSubmission<E>>,
+) -> Result<Response<Body>, StatusCode>
+where
+    E: EthSpec,
+    I: AsRef<A> + Send + Sync,
+    A: OptimisticV2<E>,
+{
+    let result = api_impl.as_ref().submit_header(query_params, body).await;
     build_response(result).await
 }
 
