@@ -4,8 +4,10 @@ use serde_utils::quoted_u64::Quoted;
 use ssz_derive::{Decode, Encode};
 pub use types::{
     superstruct, Address, EthSpec, ExecutionBlockHash, ExecutionPayloadBellatrix,
-    ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra, MainnetEthSpec,
-    MinimalEthSpec, PublicKeyBytes, Signature, SignedValidatorRegistrationData, Slot, Uint256,
+    ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra,
+    ExecutionPayloadHeaderBellatrix, ExecutionPayloadHeaderCapella, ExecutionPayloadHeaderDeneb,
+    ExecutionPayloadHeaderElectra, MainnetEthSpec, MinimalEthSpec, PublicKeyBytes, Signature,
+    SignedValidatorRegistrationData, Slot, Uint256,
 };
 
 // Builder API requests
@@ -106,6 +108,61 @@ pub struct GetReceivedBidsQueryParams {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GetValidatorRegistrationQueryParams {
     pub pubkey: PublicKeyBytes,
+}
+
+// Optimistic V2 API types
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+struct HeaderSubmission<E: EthSpec> {
+    bid_trace: BidTraceV1,
+    #[superstruct(flatten)]
+    execution_payload_header: ExecutionPayloadHeader<E>,
+    #[superstruct(only(Deneb))]
+    blobs_bundle: BlobsBundle<E>,
+}
+
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+struct SignedHeaderSubmission<E: EthSpec> {
+    #[superstruct(flatten)]
+    message: HeaderSubmission<E>,
+    signature: Signature,
+}
+
+// Websockets types
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TopBidUpdate {
+    #[serde(with = "serde_utils::quoted_u64")]
+    timestamp: u64,
+    slot: Slot,
+    #[serde(with = "serde_utils::quoted_u64")]
+    block_number: u64,
+    block_hash: ExecutionBlockHash,
+    parent_hash: ExecutionBlockHash,
+    builder_pubkey: PublicKeyBytes,
+    fee_recipient: Address,
+    #[serde(with = "serde_utils::quoted_u256")]
+    value: Uint256,
 }
 
 // Builder API responses
