@@ -9,9 +9,8 @@ use axum::{
 use bytes::Bytes;
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use relay_api_types::{
-    GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
-    GetValidatorRegistrationQueryParams, Response as RelayResponse, SubmitBlockQueryParams,
-    SubmitBlockRequest,
+    ErrorResponse, GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
+    GetValidatorRegistrationQueryParams, SubmitBlockQueryParams, SubmitBlockRequest,
 };
 use serde::Serialize;
 use tracing::error;
@@ -48,14 +47,14 @@ where
         .with_state(api_impl)
 }
 
-async fn build_response<T>(result: RelayResponse<T>) -> Result<Response<Body>, StatusCode>
+async fn build_response<T>(result: Result<T, ErrorResponse>) -> Result<Response<Body>, StatusCode>
 where
     T: Serialize + Send + 'static,
 {
     let response_builder = Response::builder();
 
     let resp = match result {
-        RelayResponse::Success(body) => {
+        Ok(body) => {
             let mut response = response_builder.status(200);
 
             if let Some(response_headers) = response.headers_mut() {
@@ -85,7 +84,7 @@ where
                 StatusCode::INTERNAL_SERVER_ERROR
             })
         }
-        RelayResponse::Error(body) => {
+        Err(body) => {
             let mut response = response_builder.status(body.code);
 
             if let Some(response_headers) = response.headers_mut() {

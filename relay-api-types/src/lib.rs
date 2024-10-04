@@ -156,15 +156,6 @@ pub struct BidTraceV2WithTimestamp {
 }
 
 // Response types common
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
-#[must_use]
-pub enum Response<T> {
-    Success(T),
-    Error(ErrorResponse),
-}
-
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub code: u16,
@@ -173,11 +164,19 @@ pub struct ErrorResponse {
     pub stacktraces: Option<Vec<String>>,
 }
 
+pub fn custom_internal_err(message: String) -> ErrorResponse {
+    ErrorResponse {
+        code: 500,
+        message,
+        stacktraces: None,
+    }
+}
+
 // Builder API response types
-pub type GetValidatorsResponse = Response<Vec<ValidatorsResponse>>;
-pub type SubmitBlockResponse = Response<()>;
+pub type GetValidatorsResponse = Vec<ValidatorsResponse>;
+pub type SubmitBlockResponse = ();
 
 // Data API response types
-pub type GetDeliveredPayloadsResponse = Response<Vec<BidTraceV2>>;
-pub type GetReceivedBidsResponse = Response<Vec<BidTraceV2WithTimestamp>>;
-pub type GetValidatorRegistrationResponse = Response<SignedValidatorRegistrationData>;
+pub type GetDeliveredPayloadsResponse = Vec<BidTraceV2>;
+pub type GetReceivedBidsResponse = Vec<BidTraceV2WithTimestamp>;
+pub type GetValidatorRegistrationResponse = SignedValidatorRegistrationData;
