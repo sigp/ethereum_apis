@@ -7,17 +7,20 @@ use axum::{
     extract::{FromRequest, Query, Request, State},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, RequestExt, Router,
+    Router,
 };
 use bytes::Bytes;
+use flate2::read::GzDecoder;
 use futures::{sink::SinkExt, stream::StreamExt};
+use http::header::CONTENT_ENCODING;
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use relay_api_types::{
-    ErrorResponse, GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
-    GetValidatorRegistrationQueryParams, SignedCancellation, SignedHeaderSubmission,
-    SubmitBlockQueryParams, SubmitBlockRequest,
+    ContentEncoding, ContentType, ErrorResponse, GetDeliveredPayloadsQueryParams,
+    GetReceivedBidsQueryParams, GetValidatorRegistrationQueryParams, SignedCancellation,
+    SignedHeaderSubmission, SubmitBlockQueryParams, SubmitBlockRequest,
 };
 use serde::Serialize;
+use std::io::Read;
 use std::net::SocketAddr;
 use tracing::error;
 use types::eth_spec::EthSpec;
@@ -139,7 +142,7 @@ where
 async fn submit_block<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSsz(body): JsonOrSsz<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -155,7 +158,7 @@ where
 async fn submit_block_optimistic_v2<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSsz(body): JsonOrSsz<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -174,7 +177,7 @@ where
 async fn submit_header<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSsz(body): JsonOrSsz<SignedHeaderSubmission<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SignedHeaderSubmission<E>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -189,7 +192,7 @@ where
 #[tracing::instrument(skip_all)]
 async fn submit_cancellation<I, A, E>(
     State(api_impl): State<I>,
-    JsonOrSsz(body): JsonOrSsz<SignedCancellation>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SignedCancellation>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -357,10 +360,10 @@ where
 
 #[must_use]
 #[derive(Debug, Clone, Copy, Default)]
-struct JsonOrSsz<T>(T);
+struct JsonOrSszMaybeGzipped<T>(T);
 
 #[async_trait]
-impl<T, S> FromRequest<S> for JsonOrSsz<T>
+impl<T, S> FromRequest<S> for JsonOrSszMaybeGzipped<T>
 where
     T: serde::de::DeserializeOwned + ssz::Decode + 'static,
     S: Send + Sync,
@@ -368,17 +371,39 @@ where
     type Rejection = Response;
 
     async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
-        let content_type_header = req.headers().get(CONTENT_TYPE);
-        let content_type = content_type_header.and_then(|value| value.to_str().ok());
+        let headers = req.headers().clone();
+        let content_type = headers
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok());
+        let content_encoding = headers
+            .get(CONTENT_ENCODING)
+            .and_then(|value| value.to_str().ok());
+
+        let bytes = Bytes::from_request(req, _state)
+            .await
+            .map_err(IntoResponse::into_response)?;
+
+        let decoded_bytes = if content_encoding == Some(&ContentEncoding::Gzip.to_string()) {
+            let mut decoder = GzDecoder::new(&bytes[..]);
+            let mut decoded = Vec::new();
+            decoder
+                .read_to_end(&mut decoded)
+                .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
+            decoded
+        } else {
+            bytes.to_vec()
+        };
 
         if let Some(content_type) = content_type {
-            if content_type.starts_with("application/json") {
-                let Json(payload) = req.extract().await.map_err(IntoResponse::into_response)?;
+            if content_type.starts_with(&ContentType::Json.to_string()) {
+                let payload: T = serde_json::from_slice(&decoded_bytes)
+                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
                 return Ok(Self(payload));
             }
 
-            if content_type.starts_with("application/octet-stream") {
-                let Ssz(payload) = req.extract().await.map_err(IntoResponse::into_response)?;
+            if content_type.starts_with(&ContentType::Ssz.to_string()) {
+                let payload = T::from_ssz_bytes(&decoded_bytes)
+                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
                 return Ok(Self(payload));
             }
         }
