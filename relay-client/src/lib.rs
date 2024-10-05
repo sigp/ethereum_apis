@@ -134,4 +134,50 @@ impl RelayClient {
 
         self.build_response(response).await
     }
+
+    pub async fn submit_header<E>(
+        &self,
+        query_params: SubmitBlockQueryParams,
+        body: SignedHeaderSubmission<E>,
+    ) -> Result<(), Error>
+    where
+        E: EthSpec,
+    {
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
+            .extend(&["relay", "v1", "builder", "headers"]);
+        let response = self
+            .client
+            .post(url)
+            .query(&query_params)
+            .json(&body)
+            .send()
+            .await?;
+
+        self.build_response(response).await
+    }
+
+    pub async fn submit_block_optimistic_v2<E>(
+        &self,
+        query_params: SubmitBlockQueryParams,
+        body: SubmitBlockRequest<E>,
+    ) -> Result<(), Error>
+    where
+        E: EthSpec,
+    {
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
+            .extend(&["relay", "v1", "builder", "blocks_optimistic_v2"]);
+        let response = self
+            .client
+            .post(url)
+            .query(&query_params)
+            .json(&body)
+            .send()
+            .await?;
+
+        self.build_response(response).await
+    }
 }
