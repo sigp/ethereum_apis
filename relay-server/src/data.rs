@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use relay_api_types::{
-    GetDeliveredPayloadsQueryParams, GetDeliveredPayloadsResponse, GetReceivedBidsQueryParams,
-    GetReceivedBidsResponse, GetValidatorRegistrationQueryParams, GetValidatorRegistrationResponse,
+    ErrorResponse, GetDeliveredPayloadsQueryParams, GetDeliveredPayloadsResponse,
+    GetReceivedBidsQueryParams, GetReceivedBidsResponse, GetValidatorRegistrationQueryParams,
+    GetValidatorRegistrationResponse,
 };
 
 /// Data
@@ -14,7 +15,7 @@ pub trait Data {
     async fn get_delivered_payloads(
         &self,
         query_params: GetDeliveredPayloadsQueryParams,
-    ) -> GetDeliveredPayloadsResponse;
+    ) -> Result<GetDeliveredPayloadsResponse, ErrorResponse>;
 
     /// Get builder bid submissions..
     ///
@@ -22,7 +23,7 @@ pub trait Data {
     async fn get_received_bids(
         &self,
         query_params: GetReceivedBidsQueryParams,
-    ) -> GetReceivedBidsResponse;
+    ) -> Result<GetReceivedBidsResponse, ErrorResponse>;
 
     /// Check that a validator is registered with the relay..
     ///
@@ -30,5 +31,5 @@ pub trait Data {
     async fn get_validator_registration(
         &self,
         query_params: GetValidatorRegistrationQueryParams,
-    ) -> GetValidatorRegistrationResponse;
+    ) -> Result<GetValidatorRegistrationResponse, ErrorResponse>;
 }

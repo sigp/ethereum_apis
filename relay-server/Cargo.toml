@@ -8,6 +8,7 @@ async-trait.workspace = true
 axum.workspace = true
 bytes.workspace = true
 ethereum_ssz.workspace = true
+futures.workspace = true
 http.workspace = true
 relay-api-types = { path = "../relay-api-types" }
 serde.workspace = true
