@@ -1,4 +1,8 @@
 use futures::{Stream, StreamExt};
+use http::header::InvalidHeaderValue;
+use http::header::CONTENT_ENCODING;
+use http::header::CONTENT_TYPE;
+use http::HeaderValue;
 pub use relay_api_types::*;
 use reqwest::Client;
 use reqwest::Url;
@@ -13,6 +17,7 @@ pub enum Error {
     StatusCode(http::StatusCode),
     InvalidUrl(Url),
     WebSocket(tokio_tungstenite::tungstenite::Error),
+    InvalidHeader(InvalidHeaderValue),
 }
 
 impl From<reqwest::Error> for Error {
@@ -24,6 +29,12 @@ impl From<reqwest::Error> for Error {
 impl From<tokio_tungstenite::tungstenite::Error> for Error {
     fn from(e: tokio_tungstenite::tungstenite::Error) -> Self {
         Error::WebSocket(e)
+    }
+}
+
+impl From<InvalidHeaderValue> for Error {
+    fn from(value: InvalidHeaderValue) -> Self {
+        Error::InvalidHeader(value)
     }
 }
 
@@ -45,6 +56,34 @@ impl RelayClient {
     where
         T: for<'de> Deserialize<'de>,
     {
+        self.build_response_with_headers(response, <_>::default(), <_>::default())
+            .await
+    }
+
+    async fn build_response_with_headers<T>(
+        &self,
+        mut response: reqwest::Response,
+        content_type: ContentType,
+        content_encoding: ContentEncoding,
+    ) -> Result<T, Error>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        response.headers_mut().insert(
+            CONTENT_TYPE,
+            HeaderValue::from_str(content_type.to_string().as_str())?,
+        );
+
+        match content_encoding {
+            ContentEncoding::Gzip => {
+                response.headers_mut().insert(
+                    CONTENT_ENCODING,
+                    HeaderValue::from_str(content_encoding.to_string().as_str())?,
+                );
+            }
+            ContentEncoding::None => {}
+        }
+
         let status = response.status();
         let text = response.text().await;
 
@@ -62,6 +101,8 @@ impl RelayClient {
         &self,
         query_params: SubmitBlockQueryParams,
         body: SubmitBlockRequest<E>,
+        content_type: ContentType,
+        content_encoding: ContentEncoding,
     ) -> Result<(), Error>
     where
         E: EthSpec,
@@ -78,7 +119,8 @@ impl RelayClient {
             .send()
             .await?;
 
-        self.build_response(response).await
+        self.build_response_with_headers(response, content_type, content_encoding)
+            .await
     }
 
     pub async fn get_validators<E>(&self) -> Result<GetValidatorsResponse, Error>
@@ -149,6 +191,8 @@ impl RelayClient {
         &self,
         query_params: SubmitBlockQueryParams,
         body: SignedHeaderSubmission<E>,
+        content_type: ContentType,
+        content_encoding: ContentEncoding,
     ) -> Result<(), Error>
     where
         E: EthSpec,
@@ -165,13 +209,16 @@ impl RelayClient {
             .send()
             .await?;
 
-        self.build_response(response).await
+        self.build_response_with_headers(response, content_type, content_encoding)
+            .await
     }
 
     pub async fn submit_block_optimistic_v2<E>(
         &self,
         query_params: SubmitBlockQueryParams,
         body: SubmitBlockRequest<E>,
+        content_type: ContentType,
+        content_encoding: ContentEncoding,
     ) -> Result<(), Error>
     where
         E: EthSpec,
@@ -188,17 +235,24 @@ impl RelayClient {
             .send()
             .await?;
 
-        self.build_response(response).await
+        self.build_response_with_headers(response, content_type, content_encoding)
+            .await
     }
 
-    pub async fn submit_cancellation(&self, body: SignedCancellation) -> Result<(), Error> {
+    pub async fn submit_cancellation(
+        &self,
+        body: SignedCancellation,
+        content_type: ContentType,
+        content_encoding: ContentEncoding,
+    ) -> Result<(), Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["relay", "v1", "builder", "cancel_bid"]);
         let response = self.client.post(url).json(&body).send().await?;
 
-        self.build_response(response).await
+        self.build_response_with_headers(response, content_type, content_encoding)
+            .await
     }
 
     pub async fn subscribe_top_bids(
