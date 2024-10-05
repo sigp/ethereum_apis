@@ -110,7 +110,6 @@ pub struct GetValidatorRegistrationQueryParams {
     pub pubkey: PublicKeyBytes,
 }
 
-// Optimistic V2 API types
 #[superstruct(
     variants(Bellatrix, Capella, Deneb, Electra),
     variant_attributes(
@@ -147,6 +146,21 @@ pub struct SignedHeaderSubmission<E: EthSpec> {
     #[superstruct(flatten)]
     message: HeaderSubmission<E>,
     signature: Signature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+pub struct Cancellation {
+    #[serde(with = "serde_utils::quoted_u64")]
+    pub slot: u64,
+    pub parent_hash: ExecutionBlockHash,
+    pub proposer_public_key: PublicKeyBytes,
+    pub builder_public_key: PublicKeyBytes,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+pub struct SignedCancellation {
+    pub message: Cancellation,
+    pub signature: Signature,
 }
 
 // Websockets types

@@ -1,4 +1,4 @@
-use crate::top_bid::TopBids;
+use crate::{builder::Builder, data::Data};
 use axum::extract::connect_info::ConnectInfo;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::{
@@ -14,22 +14,20 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use relay_api_types::{
     ErrorResponse, GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
-    GetValidatorRegistrationQueryParams, SignedHeaderSubmission, SubmitBlockQueryParams,
-    SubmitBlockRequest,
+    GetValidatorRegistrationQueryParams, SignedCancellation, SignedHeaderSubmission,
+    SubmitBlockQueryParams, SubmitBlockRequest,
 };
 use serde::Serialize;
 use std::net::SocketAddr;
 use tracing::error;
 use types::eth_spec::EthSpec;
 
-use crate::{builder::Builder, data::Data, optimistic_v2::OptimisticV2};
-
 /// Setup API Server.
 pub fn new<I, A, E>(api_impl: I) -> Router
 where
     E: EthSpec,
     I: AsRef<A> + Clone + Send + Sync + 'static,
-    A: Builder<E> + Data + OptimisticV2<E> + TopBids + 'static,
+    A: Builder<E> + Data + 'static,
 {
     // build our application with a route
     Router::new()
@@ -43,6 +41,12 @@ where
             "/relay/v1/builder/validators",
             get(get_validators::<I, A, E>),
         )
+        .route("/relay/v1/builder/headers", post(submit_header::<I, A, E>))
+        .route(
+            "/relay/v1/builder/cancel_bid",
+            post(submit_cancellation::<I, A, E>),
+        )
+        .route("/relay/v1/builder/top_bids", get(get_top_bids::<I, A, E>))
         .route(
             "/relay/v1/data/bidtraces/builder_blocks_received",
             get(get_received_bids::<I, A>),
@@ -55,7 +59,6 @@ where
             "/relay/v1/data/validator_registration",
             get(get_validator_registration::<I, A>),
         )
-        .route("/relay/v1/builder/top_bids", get(get_top_bids::<I, A>))
         .with_state(api_impl)
 }
 
@@ -157,7 +160,7 @@ async fn submit_block_optimistic_v2<I, A, E>(
 where
     E: EthSpec,
     I: AsRef<A> + Send + Sync,
-    A: OptimisticV2<E>,
+    A: Builder<E>,
 {
     let result = api_impl
         .as_ref()
@@ -176,9 +179,24 @@ async fn submit_header<I, A, E>(
 where
     E: EthSpec,
     I: AsRef<A> + Send + Sync,
-    A: OptimisticV2<E>,
+    A: Builder<E>,
 {
     let result = api_impl.as_ref().submit_header(query_params, body).await;
+    build_response(result).await
+}
+
+/// SubmitCancellation - POST /relay/v1/builder/cancel_bid
+#[tracing::instrument(skip_all)]
+async fn submit_cancellation<I, A, E>(
+    State(api_impl): State<I>,
+    JsonOrSsz(body): JsonOrSsz<SignedCancellation>,
+) -> Result<Response<Body>, StatusCode>
+where
+    E: EthSpec,
+    I: AsRef<A> + Send + Sync,
+    A: Builder<E>,
+{
+    let result = api_impl.as_ref().submit_cancellation(body).await;
     build_response(result).await
 }
 
@@ -194,6 +212,73 @@ where
     build_response(result).await
 }
 
+/// GetTopBids - GET /relay/v1/builder/top_bids
+#[tracing::instrument(skip_all)]
+async fn get_top_bids<I, A, E>(
+    ws: WebSocketUpgrade,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(api_impl): State<I>,
+) -> impl IntoResponse
+where
+    I: AsRef<A> + Send + Sync + 'static,
+    A: Builder<E> + 'static,
+    E: EthSpec,
+{
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, api_impl))
+}
+
+async fn handle_socket<I, A, E>(socket: WebSocket, who: SocketAddr, api_impl: I)
+where
+    I: AsRef<A> + Send + Sync + 'static,
+    A: Builder<E>,
+    E: EthSpec,
+{
+    let (mut sender, mut receiver) = socket.split();
+
+    let mut send_task = tokio::spawn(async move {
+        let stream = match api_impl.as_ref().get_top_bids().await {
+            Ok(stream) => stream,
+            Err(e) => {
+                tracing::error!("Failed to get top bids stream: {:?}", e);
+                let _ = sender.close().await;
+                return;
+            }
+        };
+
+        let mut stream = stream;
+        while let Some(update) = stream.next().await {
+            match serde_json::to_string(&update) {
+                Ok(json) => {
+                    if let Err(e) = sender.send(Message::Text(json)).await {
+                        tracing::error!("Error sending message: {:?}", e);
+                        break;
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("Error serializing update: {:?}", e);
+                    continue;
+                }
+            }
+        }
+        let _ = sender.close().await;
+    });
+
+    let mut recv_task = tokio::spawn(async move {
+        while let Some(Ok(message)) = receiver.next().await {
+            match message {
+                Message::Close(_) => break,
+                _ => {}
+            }
+        }
+    });
+
+    tokio::select! {
+        _ = (&mut send_task) => recv_task.abort(),
+        _ = (&mut recv_task) => send_task.abort(),
+    }
+
+    tracing::info!("Client {} disconnected", who);
+}
 /// GetDeliveredPayloads - GET /relay/v1/data/bidtraces/proposer_payload_delivered
 #[tracing::instrument(skip_all)]
 async fn get_delivered_payloads<I, A>(
@@ -300,70 +385,4 @@ where
 
         Err(StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response())
     }
-}
-
-/// GetTopBids - GET /relay/v1/builder/top_bids
-#[tracing::instrument(skip_all)]
-async fn get_top_bids<I, A>(
-    ws: WebSocketUpgrade,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    State(api_impl): State<I>,
-) -> impl IntoResponse
-where
-    I: AsRef<A> + Send + Sync + 'static,
-    A: TopBids + 'static,
-{
-    ws.on_upgrade(move |socket| handle_socket(socket, addr, api_impl))
-}
-
-async fn handle_socket<I, A>(socket: WebSocket, who: SocketAddr, api_impl: I)
-where
-    I: AsRef<A> + Send + Sync + 'static,
-    A: TopBids,
-{
-    let (mut sender, mut receiver) = socket.split();
-
-    let mut send_task = tokio::spawn(async move {
-        let stream = match api_impl.as_ref().get_top_bids().await {
-            Ok(stream) => stream,
-            Err(e) => {
-                tracing::error!("Failed to get top bids stream: {:?}", e);
-                let _ = sender.close().await;
-                return;
-            }
-        };
-
-        let mut stream = stream;
-        while let Some(update) = stream.next().await {
-            match serde_json::to_string(&update) {
-                Ok(json) => {
-                    if let Err(e) = sender.send(Message::Text(json)).await {
-                        tracing::error!("Error sending message: {:?}", e);
-                        break;
-                    }
-                }
-                Err(e) => {
-                    tracing::error!("Error serializing update: {:?}", e);
-                    continue;
-                }
-            }
-        }
-        let _ = sender.close().await;
-    });
-
-    let mut recv_task = tokio::spawn(async move {
-        while let Some(Ok(message)) = receiver.next().await {
-            match message {
-                Message::Close(_) => break,
-                _ => {}
-            }
-        }
-    });
-
-    tokio::select! {
-        _ = (&mut send_task) => recv_task.abort(),
-        _ = (&mut recv_task) => send_task.abort(),
-    }
-
-    tracing::info!("Client {} disconnected", who);
 }
