@@ -1,6 +1,9 @@
+use futures::{Stream, StreamExt};
 pub use relay_api_types::*;
-use reqwest::{Client, Url};
+use reqwest::Client;
+use reqwest::Url;
 use serde::Deserialize;
+use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 #[derive(Debug)]
 pub enum Error {
@@ -9,11 +12,18 @@ pub enum Error {
     ServerMessage(String),
     StatusCode(http::StatusCode),
     InvalidUrl(Url),
+    WebSocket(tokio_tungstenite::tungstenite::Error),
 }
 
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
         Error::Reqwest(e)
+    }
+}
+
+impl From<tokio_tungstenite::tungstenite::Error> for Error {
+    fn from(e: tokio_tungstenite::tungstenite::Error) -> Self {
+        Error::WebSocket(e)
     }
 }
 
@@ -179,5 +189,43 @@ impl RelayClient {
             .await?;
 
         self.build_response(response).await
+    }
+
+    pub async fn subscribe_top_bids(
+        &self,
+    ) -> Result<impl Stream<Item = Result<TopBidUpdate, Error>>, Error> {
+        let mut url = self.base_url.clone();
+        url.set_path("/relay/v1/builder/top_bids");
+
+        let ws_scheme = match url.scheme() {
+            "http" => "ws",
+            "https" => "wss",
+            _ => return Err(Error::InvalidUrl(self.base_url.clone())),
+        };
+        url.set_scheme(ws_scheme)
+            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?;
+
+        let (ws_stream, _) = connect_async(url.as_str())
+            .await
+            .map_err(Error::WebSocket)?;
+        let (_, read) = ws_stream.split();
+
+        let stream = read.filter_map(|message| async {
+            match message {
+                Ok(Message::Text(text)) => match serde_json::from_str::<TopBidUpdate>(&text) {
+                    Ok(update) => Some(Ok(update)),
+                    Err(e) => Some(Err(Error::InvalidJson(e, text))),
+                },
+                Ok(Message::Binary(bin)) => match serde_json::from_slice::<TopBidUpdate>(&bin) {
+                    Ok(update) => Some(Ok(update)),
+                    Err(e) => {
+                        let text = String::from_utf8_lossy(&bin).to_string();
+                        Some(Err(Error::InvalidJson(e, text)))
+                    }
+                },
+                _ => None, // Ignore other message types
+            }
+        });
+        Ok(stream)
     }
 }
