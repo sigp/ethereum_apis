@@ -191,6 +191,16 @@ impl RelayClient {
         self.build_response(response).await
     }
 
+    pub async fn submit_cancellation(&self, body: SignedCancellation) -> Result<(), Error> {
+        let mut url = self.base_url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
+            .extend(&["relay", "v1", "builder", "cancel_bid"]);
+        let response = self.client.post(url).json(&body).send().await?;
+
+        self.build_response(response).await
+    }
+
     pub async fn subscribe_top_bids(
         &self,
     ) -> Result<impl Stream<Item = Result<TopBidUpdate, Error>>, Error> {
