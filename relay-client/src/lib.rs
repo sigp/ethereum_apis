@@ -13,7 +13,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 pub enum Error {
     Reqwest(reqwest::Error),
     InvalidJson(serde_json::Error, String),
-    ServerMessage(String),
+    ServerMessage(ErrorResponse),
     StatusCode(http::StatusCode),
     InvalidUrl(Url),
     WebSocket(tokio_tungstenite::tungstenite::Error),
@@ -91,7 +91,9 @@ impl RelayClient {
             let text = text?;
             serde_json::from_str(&text).map_err(|e| Error::InvalidJson(e, text))
         } else if let Ok(message) = text {
-            Err(Error::ServerMessage(message))
+            Err(Error::ServerMessage(
+                serde_json::from_str(&message).map_err(|e| Error::InvalidJson(e, message))?,
+            ))
         } else {
             Err(Error::StatusCode(status))
         }
