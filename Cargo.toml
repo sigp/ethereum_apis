@@ -17,6 +17,7 @@ eth2 = { git = "https://github.com/realbigsean/lighthouse.git", rev = "10ce60633
 ethereum_serde_utils = "0.5.2"
 ethereum_ssz = "0.5.4"
 ethereum_ssz_derive = "0.5.4"
+flate2 = "1.0.34"
 futures = "0.3.30"
 http = "1"
 reqwest = { version = "0.12.5", features = ["json"] }
