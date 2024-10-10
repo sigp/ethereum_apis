@@ -1,10 +1,11 @@
 use std::pin::Pin;
 
 use async_trait::async_trait;
+use ethereum_apis_common::ErrorResponse;
 use futures::Stream;
 use relay_api_types::{
-    ErrorResponse, GetValidatorsResponse, SignedCancellation, SignedHeaderSubmission,
-    SubmitBlockQueryParams, SubmitBlockRequest, TopBidUpdate,
+    GetValidatorsResponse, SignedCancellation, SignedHeaderSubmission, SubmitBlockQueryParams,
+    SubmitBlockRequest, TopBidUpdate,
 };
 use types::eth_spec::EthSpec;
 

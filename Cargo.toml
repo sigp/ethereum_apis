@@ -2,11 +2,13 @@
 resolver = "2"
 members = [
   "builder-api-types",
+  "builder-server",
   "relay-client",
   "beacon-client",
   "relay-api-types",
   "beacon-api-types",
   "relay-server",
+  "common"
 ]
 
 [workspace.dependencies]

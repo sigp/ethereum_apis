@@ -2,27 +2,21 @@ use crate::{builder::Builder, data::Data};
 use axum::extract::connect_info::ConnectInfo;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::{
-    async_trait,
     body::Body,
-    extract::{FromRequest, Query, Request, State},
+    extract::{Query, State},
     response::{IntoResponse, Response},
     routing::{get, post},
     Router,
 };
-use bytes::Bytes;
-use flate2::read::GzDecoder;
+use ethereum_apis_common::{build_response, JsonOrSszMaybeGzipped};
 use futures::{sink::SinkExt, stream::StreamExt};
-use http::header::CONTENT_ENCODING;
-use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
+use http::StatusCode;
 use relay_api_types::{
-    ContentEncoding, ContentType, ErrorResponse, GetDeliveredPayloadsQueryParams,
-    GetReceivedBidsQueryParams, GetValidatorRegistrationQueryParams, SignedCancellation,
-    SignedHeaderSubmission, SubmitBlockQueryParams, SubmitBlockRequest,
+    GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
+    GetValidatorRegistrationQueryParams, SignedCancellation, SignedHeaderSubmission,
+    SubmitBlockQueryParams, SubmitBlockRequest,
 };
-use serde::Serialize;
-use std::io::Read;
 use std::net::SocketAddr;
-use tracing::error;
 use types::eth_spec::EthSpec;
 
 /// Setup API Server.
@@ -63,78 +57,6 @@ where
             get(get_validator_registration::<I, A>),
         )
         .with_state(api_impl)
-}
-
-async fn build_response<T>(result: Result<T, ErrorResponse>) -> Result<Response<Body>, StatusCode>
-where
-    T: Serialize + Send + 'static,
-{
-    let response_builder = Response::builder();
-
-    let resp = match result {
-        Ok(body) => {
-            let mut response = response_builder.status(200);
-
-            if let Some(response_headers) = response.headers_mut() {
-                response_headers.insert(
-                    CONTENT_TYPE,
-                    HeaderValue::from_str("application/json").map_err(|e| {
-                        error!(error = ?e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?,
-                );
-            }
-
-            let body_content = tokio::task::spawn_blocking(move || {
-                serde_json::to_vec(&body).map_err(|e| {
-                    error!(error = ?e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-            })
-            .await
-            .map_err(|e| {
-                error!(error = ?e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })??;
-
-            response.body(Body::from(body_content)).map_err(|e| {
-                error!(error = ?e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })
-        }
-        Err(body) => {
-            let mut response = response_builder.status(body.code);
-
-            if let Some(response_headers) = response.headers_mut() {
-                response_headers.insert(
-                    CONTENT_TYPE,
-                    HeaderValue::from_str("application/json").map_err(|e| {
-                        error!(error = ?e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?,
-                );
-            }
-
-            let body_content = tokio::task::spawn_blocking(move || {
-                serde_json::to_vec(&body).map_err(|e| {
-                    error!(error = ?e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-            })
-            .await
-            .map_err(|e| {
-                error!(error = ?e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })??;
-
-            response.body(Body::from(body_content)).map_err(|e| {
-                error!(error = ?e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })
-        }
-    };
-
-    resp
 }
 
 /// SubmitBlock - POST /relay/v1/builder/blocks
@@ -325,89 +247,4 @@ where
         .get_validator_registration(query_params)
         .await;
     build_response(result).await
-}
-
-#[must_use]
-#[derive(Debug, Clone, Copy, Default)]
-struct Ssz<T>(T);
-
-#[async_trait]
-impl<T, S> FromRequest<S> for Ssz<T>
-where
-    T: ssz::Decode,
-    S: Send + Sync,
-{
-    type Rejection = Response;
-
-    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
-        let content_type_header = req.headers().get(CONTENT_TYPE);
-        let content_type = content_type_header.and_then(|value| value.to_str().ok());
-
-        if let Some(content_type) = content_type {
-            if content_type.starts_with("application/octet-stream") {
-                let bytes = Bytes::from_request(req, state)
-                    .await
-                    .map_err(IntoResponse::into_response)?;
-                return Ok(T::from_ssz_bytes(&bytes)
-                    .map(Ssz)
-                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?);
-            }
-        }
-
-        Err(StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response())
-    }
-}
-
-#[must_use]
-#[derive(Debug, Clone, Copy, Default)]
-struct JsonOrSszMaybeGzipped<T>(T);
-
-#[async_trait]
-impl<T, S> FromRequest<S> for JsonOrSszMaybeGzipped<T>
-where
-    T: serde::de::DeserializeOwned + ssz::Decode + 'static,
-    S: Send + Sync,
-{
-    type Rejection = Response;
-
-    async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
-        let headers = req.headers().clone();
-        let content_type = headers
-            .get(CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok());
-        let content_encoding = headers
-            .get(CONTENT_ENCODING)
-            .and_then(|value| value.to_str().ok());
-
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
-
-        let decoded_bytes = if content_encoding == Some(&ContentEncoding::Gzip.to_string()) {
-            let mut decoder = GzDecoder::new(&bytes[..]);
-            let mut decoded = Vec::new();
-            decoder
-                .read_to_end(&mut decoded)
-                .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
-            decoded
-        } else {
-            bytes.to_vec()
-        };
-
-        if let Some(content_type) = content_type {
-            if content_type.starts_with(&ContentType::Json.to_string()) {
-                let payload: T = serde_json::from_slice(&decoded_bytes)
-                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
-                return Ok(Self(payload));
-            }
-
-            if content_type.starts_with(&ContentType::Ssz.to_string()) {
-                let payload = T::from_ssz_bytes(&decoded_bytes)
-                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
-                return Ok(Self(payload));
-            }
-        }
-
-        Err(StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response())
-    }
 }

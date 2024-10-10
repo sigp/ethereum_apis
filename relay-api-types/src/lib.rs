@@ -240,23 +240,6 @@ pub struct BidTraceV2WithTimestamp {
     pub timestamp_ms: i64,
 }
 
-// Response types common
-#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub code: u16,
-    pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stacktraces: Option<Vec<String>>,
-}
-
-pub fn custom_internal_err(message: String) -> ErrorResponse {
-    ErrorResponse {
-        code: 500,
-        message,
-        stacktraces: None,
-    }
-}
-
 // Builder API response types
 pub type GetValidatorsResponse = Vec<ValidatorsResponse>;
 
@@ -264,56 +247,3 @@ pub type GetValidatorsResponse = Vec<ValidatorsResponse>;
 pub type GetDeliveredPayloadsResponse = Vec<BidTraceV2>;
 pub type GetReceivedBidsResponse = Vec<BidTraceV2WithTimestamp>;
 pub type GetValidatorRegistrationResponse = SignedValidatorRegistrationData;
-
-// Headers
-#[derive(Default)]
-pub enum ContentType {
-    #[default]
-    Json,
-    Ssz,
-}
-
-impl std::fmt::Display for ContentType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ContentType::Json => write!(f, "application/json"),
-            ContentType::Ssz => write!(f, "application/octet-stream"),
-        }
-    }
-}
-
-impl From<String> for ContentType {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "application/json" => ContentType::Json,
-            "application/octet-stream" => ContentType::Ssz,
-            _ => panic!("unknown content type: {}", value),
-        }
-    }
-}
-
-#[derive(Default)]
-pub enum ContentEncoding {
-    Gzip,
-    #[default]
-    None,
-}
-
-impl std::fmt::Display for ContentEncoding {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ContentEncoding::Gzip => write!(f, "gzip"),
-            ContentEncoding::None => write!(f, ""),
-        }
-    }
-}
-
-impl From<String> for ContentEncoding {
-    fn from(value: String) -> Self {
-        match value.as_ref() {
-            "gzip" => ContentEncoding::Gzip,
-            "" => ContentEncoding::None,
-            _ => panic!("unknown content encoding: {}", value),
-        }
-    }
-}
