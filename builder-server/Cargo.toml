@@ -1,5 +1,5 @@
 [package]
-name = "relay-server"
+name = "builder-server"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,11 +8,11 @@ async-trait.workspace = true
 axum.workspace = true
 bytes.workspace = true
 ethereum_ssz.workspace = true
-ethereum-apis-common = { path = "../common" }
 flate2.workspace = true
 futures.workspace = true
 http.workspace = true
-relay-api-types = { path = "../relay-api-types" }
+builder-api-types = { path = "../builder-api-types" }
+ethereum-apis-common = { path = "../common" }
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

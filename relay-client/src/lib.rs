@@ -1,3 +1,4 @@
+use ethereum_apis_common::{ContentEncoding, ContentType, ErrorResponse};
 use futures::{Stream, StreamExt};
 use http::header::InvalidHeaderValue;
 use http::header::CONTENT_ENCODING;
