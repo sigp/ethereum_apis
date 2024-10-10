@@ -1,11 +1,10 @@
-use async_trait::async_trait;
-use ethereum_apis_common::{build_response, ErrorResponse};
+use ethereum_apis_common::ErrorResponse;
 use reqwest::Client;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 use types::{
     builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
-    ForkName, PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
+    PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
 };
 
 #[derive(Debug)]
@@ -120,4 +119,3 @@ impl BuilderClient {
         }
     }
 }
-
