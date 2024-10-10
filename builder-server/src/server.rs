@@ -6,12 +6,12 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use ethereum_apis_common::build_response;
-use types::{
+use builder_api_types::{
     eth_spec::EthSpec, fork_versioned_response::EmptyMetadata, ExecutionBlockHash,
     ForkVersionedResponse, PublicKeyBytes, SignedBlindedBeaconBlock,
     SignedValidatorRegistrationData, Slot,
 };
+use ethereum_apis_common::build_response;
 
 use crate::builder::Builder;
 

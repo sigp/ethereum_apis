@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+builder-api-types = { path = "../builder-api-types" }
 ethereum-apis-common = { path = "../common" }
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-types.workspace = true

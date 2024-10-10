@@ -1,14 +1,13 @@
-use beacon_api_types::BlobsBundle;
-use serde::{Deserialize, Serialize};
-use serde_utils::quoted_u64::Quoted;
-use ssz_derive::{Decode, Encode};
-pub use types::{
-    superstruct, Address, EthSpec, ExecutionBlockHash, ExecutionPayloadBellatrix,
+pub use beacon_api_types::{
+    superstruct, Address, BlobsBundle, EthSpec, ExecutionBlockHash, ExecutionPayloadBellatrix,
     ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra,
     ExecutionPayloadHeaderBellatrix, ExecutionPayloadHeaderCapella, ExecutionPayloadHeaderDeneb,
     ExecutionPayloadHeaderElectra, MainnetEthSpec, MinimalEthSpec, PublicKeyBytes, Signature,
     SignedValidatorRegistrationData, Slot, Uint256,
 };
+use serde::{Deserialize, Serialize};
+use serde_utils::quoted_u64::Quoted;
+use ssz_derive::{Decode, Encode};
 
 // Builder API requests
 

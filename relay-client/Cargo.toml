@@ -12,4 +12,3 @@ reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio-tungstenite.workspace = true
-types.workspace = true

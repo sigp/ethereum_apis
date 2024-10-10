@@ -4,6 +4,7 @@ use axum::{
     extract::{FromRequest, Request},
     response::{IntoResponse, Response},
 };
+use beacon_api_types::ForkVersionDeserialize;
 use bytes::Bytes;
 use flate2::read::GzDecoder;
 use http::header::CONTENT_ENCODING;
@@ -11,7 +12,6 @@ use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::io::Read;
 use tracing::error;
-use types::ForkVersionDeserialize;
 
 pub const CONSENSUS_VERSION_HEADER: &'static str = "Eth-Consensus-Version";
 

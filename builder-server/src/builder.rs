@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use ethereum_apis_common::ErrorResponse;
-use types::{
+use builder_api_types::{
     builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
     ForkName, PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
 };
+use ethereum_apis_common::ErrorResponse;
 
 #[async_trait]
 pub trait Builder<E: EthSpec> {

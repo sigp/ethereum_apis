@@ -12,12 +12,11 @@ use ethereum_apis_common::{build_response, JsonOrSszMaybeGzipped};
 use futures::{sink::SinkExt, stream::StreamExt};
 use http::StatusCode;
 use relay_api_types::{
-    GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
+    EthSpec, GetDeliveredPayloadsQueryParams, GetReceivedBidsQueryParams,
     GetValidatorRegistrationQueryParams, SignedCancellation, SignedHeaderSubmission,
     SubmitBlockQueryParams, SubmitBlockRequest,
 };
 use std::net::SocketAddr;
-use types::eth_spec::EthSpec;
 
 /// Setup API Server.
 pub fn new<I, A, E>(api_impl: I) -> Router

@@ -1,11 +1,11 @@
+pub use builder_api_types::{
+    builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
+    PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
+};
 use ethereum_apis_common::ErrorResponse;
 use reqwest::Client;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
-use types::{
-    builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
-    PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
-};
 
 #[derive(Debug)]
 pub enum Error {
