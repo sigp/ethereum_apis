@@ -1,10 +1,4 @@
-pub use beacon_api_types::{
-    superstruct, Address, BlobsBundle, EthSpec, ExecutionBlockHash, ExecutionPayloadBellatrix,
-    ExecutionPayloadCapella, ExecutionPayloadDeneb, ExecutionPayloadElectra,
-    ExecutionPayloadHeaderBellatrix, ExecutionPayloadHeaderCapella, ExecutionPayloadHeaderDeneb,
-    ExecutionPayloadHeaderElectra, MainnetEthSpec, MinimalEthSpec, PublicKeyBytes, Signature,
-    SignedValidatorRegistrationData, Slot, Uint256,
-};
+pub use beacon_api_types::*;
 use serde::{Deserialize, Serialize};
 use serde_utils::quoted_u64::Quoted;
 use ssz_derive::{Decode, Encode};

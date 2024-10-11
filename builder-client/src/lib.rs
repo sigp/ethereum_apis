@@ -1,8 +1,6 @@
-pub use builder_api_types::{
-    builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
-    PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
-};
-use ethereum_apis_common::ErrorResponse;
+pub use builder_api_types::*;
+pub use builder_bid::SignedBuilderBid;
+pub use ethereum_apis_common::ErrorResponse;
 use reqwest::Client;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
