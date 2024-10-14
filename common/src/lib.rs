@@ -215,7 +215,7 @@ where
 }
 
 // Headers
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum ContentType {
     #[default]
     Json,
@@ -241,7 +241,7 @@ impl From<String> for ContentType {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum ContentEncoding {
     Gzip,
     #[default]
