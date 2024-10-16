@@ -24,12 +24,12 @@ pub struct SubmitBlockQueryParams {
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
 pub struct SubmitBlockRequest<E: EthSpec> {
-    message: BidTraceV1,
+    pub message: BidTraceV1,
     #[superstruct(flatten)]
-    execution_payload: ExecutionPayload<E>,
-    signature: Signature,
+    pub execution_payload: ExecutionPayload<E>,
+    pub signature: Signature,
     #[superstruct(only(Deneb))]
-    blobs_bundle: BlobsBundle<E>,
+    pub blobs_bundle: BlobsBundle<E>,
 }
 
 impl<E: EthSpec> ssz::Decode for SubmitBlockRequest<E> {
@@ -116,11 +116,11 @@ pub struct GetValidatorRegistrationQueryParams {
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
 pub struct HeaderSubmission<E: EthSpec> {
-    bid_trace: BidTraceV1,
+    pub bid_trace: BidTraceV1,
     #[superstruct(flatten)]
-    execution_payload_header: ExecutionPayloadHeader<E>,
+    pub execution_payload_header: ExecutionPayloadHeader<E>,
     #[superstruct(only(Deneb))]
-    blobs_bundle: BlobsBundle<E>,
+    pub blobs_bundle: BlobsBundle<E>,
 }
 
 #[superstruct(
@@ -137,8 +137,8 @@ pub struct HeaderSubmission<E: EthSpec> {
 #[ssz(enum_behaviour = "transparent")]
 pub struct SignedHeaderSubmission<E: EthSpec> {
     #[superstruct(flatten)]
-    message: HeaderSubmission<E>,
-    signature: Signature,
+    pub message: HeaderSubmission<E>,
+    pub signature: Signature,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
