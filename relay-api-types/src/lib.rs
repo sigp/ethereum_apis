@@ -160,16 +160,16 @@ pub struct SignedCancellation {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TopBidUpdate {
     #[serde(with = "serde_utils::quoted_u64")]
-    timestamp: u64,
-    slot: Slot,
+    pub timestamp: u64,
+    pub slot: Slot,
     #[serde(with = "serde_utils::quoted_u64")]
-    block_number: u64,
-    block_hash: ExecutionBlockHash,
-    parent_hash: ExecutionBlockHash,
-    builder_pubkey: PublicKeyBytes,
-    fee_recipient: Address,
+    pub block_number: u64,
+    pub block_hash: ExecutionBlockHash,
+    pub parent_hash: ExecutionBlockHash,
+    pub builder_pubkey: PublicKeyBytes,
+    pub fee_recipient: Address,
     #[serde(with = "serde_utils::quoted_u256")]
-    value: Uint256,
+    pub value: Uint256,
 }
 
 // Builder API responses
@@ -182,8 +182,8 @@ pub enum Filtering {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ValidatorPreferences {
-    filtering: Filtering,
-    trusted_builders: Option<Vec<String>>,
+    pub filtering: Filtering,
+    pub trusted_builders: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
