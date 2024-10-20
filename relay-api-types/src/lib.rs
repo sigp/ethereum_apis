@@ -233,6 +233,45 @@ pub struct BidTraceV2WithTimestamp {
     pub timestamp_ms: i64,
 }
 
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+pub struct SignedHeaderResponse<E: EthSpec> {
+    #[superstruct(flatten)]
+    pub message: HeaderSubmission<E>,
+    pub signature: Signature,
+}
+
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+pub struct HeaderResponse<E: EthSpec> {
+    #[superstruct(flatten)]
+    pub execution_payload_header: ExecutionPayloadHeader<E>,
+    #[superstruct(only(Deneb))]
+    pub blobs_bundle: BlobsBundle<E>,
+    pub value: Uint256,
+    pub pubkey: PublicKeyBytes,
+}
+
 // Builder API response types
 pub type GetValidatorsResponse = Vec<ValidatorsResponse>;
 
