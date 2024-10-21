@@ -102,8 +102,8 @@ impl RelayClient {
 
     pub async fn submit_block<E>(
         &self,
-        query_params: SubmitBlockQueryParams,
-        body: SubmitBlockRequest<E>,
+        query_params: &SubmitBlockQueryParams,
+        body: &SubmitBlockRequest<E>,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -117,8 +117,8 @@ impl RelayClient {
         let response = self
             .client
             .post(url)
-            .query(&query_params)
-            .json(&body)
+            .query(query_params)
+            .json(body)
             .send()
             .await?;
 
@@ -141,7 +141,7 @@ impl RelayClient {
 
     pub async fn get_delivered_payloads(
         &self,
-        query_params: GetDeliveredPayloadsQueryParams,
+        query_params: &GetDeliveredPayloadsQueryParams,
     ) -> Result<GetDeliveredPayloadsResponse, Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
@@ -153,14 +153,14 @@ impl RelayClient {
                 "bidtraces",
                 "proposer_payload_delivered",
             ]);
-        let response = self.client.get(url).query(&query_params).send().await?;
+        let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
     }
 
     pub async fn get_received_bids(
         &self,
-        query_params: GetReceivedBidsQueryParams,
+        query_params: &GetReceivedBidsQueryParams,
     ) -> Result<GetReceivedBidsResponse, Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
@@ -172,28 +172,28 @@ impl RelayClient {
                 "bidtraces",
                 "builder_blocks_received",
             ]);
-        let response = self.client.get(url).query(&query_params).send().await?;
+        let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
     }
 
     pub async fn get_validator_registration(
         &self,
-        query_params: GetValidatorRegistrationQueryParams,
+        query_params: &GetValidatorRegistrationQueryParams,
     ) -> Result<GetValidatorRegistrationResponse, Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["relay", "v1", "data", "validator_registration"]);
-        let response = self.client.get(url).query(&query_params).send().await?;
+        let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
     }
 
     pub async fn submit_header<E>(
         &self,
-        query_params: SubmitBlockQueryParams,
-        body: SignedHeaderSubmission<E>,
+        query_params: &SubmitBlockQueryParams,
+        body: &SignedHeaderSubmission<E>,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -207,8 +207,8 @@ impl RelayClient {
         let response = self
             .client
             .post(url)
-            .query(&query_params)
-            .json(&body)
+            .query(query_params)
+            .json(body)
             .send()
             .await?;
 
@@ -218,8 +218,8 @@ impl RelayClient {
 
     pub async fn submit_block_optimistic_v2<E>(
         &self,
-        query_params: SubmitBlockQueryParams,
-        body: SubmitBlockRequest<E>,
+        query_params: &SubmitBlockQueryParams,
+        body: &SubmitBlockRequest<E>,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -233,8 +233,8 @@ impl RelayClient {
         let response = self
             .client
             .post(url)
-            .query(&query_params)
-            .json(&body)
+            .query(query_params)
+            .json(body)
             .send()
             .await?;
 
@@ -244,7 +244,7 @@ impl RelayClient {
 
     pub async fn submit_cancellation(
         &self,
-        body: SignedCancellation,
+        body: &SignedCancellation,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error> {
@@ -252,7 +252,7 @@ impl RelayClient {
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["relay", "v1", "builder", "cancel_bid"]);
-        let response = self.client.post(url).json(&body).send().await?;
+        let response = self.client.post(url).json(body).send().await?;
 
         self.build_response_with_headers(response, content_type, content_encoding)
             .await

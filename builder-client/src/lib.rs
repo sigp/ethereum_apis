@@ -52,28 +52,28 @@ impl BuilderClient {
 
     pub async fn register_validators(
         &self,
-        registrations: Vec<SignedValidatorRegistrationData>,
+        registrations: &[SignedValidatorRegistrationData],
     ) -> Result<(), Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["eth", "v1", "builder", "validators"]);
 
-        let response = self.client.post(url).json(&registrations).send().await?;
+        let response = self.client.post(url).json(registrations).send().await?;
 
         self.build_response(response).await
     }
 
     pub async fn submit_blinded_block<E: EthSpec>(
         &self,
-        block: SignedBlindedBeaconBlock<E>,
+        block: &SignedBlindedBeaconBlock<E>,
     ) -> Result<ExecutionPayload<E>, Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["eth", "v1", "builder", "blinded_blocks"]);
 
-        let response = self.client.post(url).json(&block).send().await?;
+        let response = self.client.post(url).json(block).send().await?;
 
         self.build_response(response).await
     }
@@ -82,7 +82,7 @@ impl BuilderClient {
         &self,
         slot: Slot,
         parent_hash: ExecutionBlockHash,
-        pubkey: PublicKeyBytes,
+        pubkey: &PublicKeyBytes,
     ) -> Result<SignedBuilderBid<E>, Error> {
         let mut url = self.base_url.clone();
         url.path_segments_mut()
