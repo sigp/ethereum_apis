@@ -24,12 +24,12 @@ pub struct SubmitBlockQueryParams {
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
 pub struct SubmitBlockRequest<E: EthSpec> {
-    message: BidTraceV1,
+    pub message: BidTraceV1,
     #[superstruct(flatten)]
-    execution_payload: ExecutionPayload<E>,
-    signature: Signature,
+    pub execution_payload: ExecutionPayload<E>,
+    pub signature: Signature,
     #[superstruct(only(Deneb))]
-    blobs_bundle: BlobsBundle<E>,
+    pub blobs_bundle: BlobsBundle<E>,
 }
 
 impl<E: EthSpec> ssz::Decode for SubmitBlockRequest<E> {
@@ -116,11 +116,11 @@ pub struct GetValidatorRegistrationQueryParams {
 #[serde(bound = "E: EthSpec", untagged)]
 #[ssz(enum_behaviour = "transparent")]
 pub struct HeaderSubmission<E: EthSpec> {
-    bid_trace: BidTraceV1,
+    pub bid_trace: BidTraceV1,
     #[superstruct(flatten)]
-    execution_payload_header: ExecutionPayloadHeader<E>,
+    pub execution_payload_header: ExecutionPayloadHeader<E>,
     #[superstruct(only(Deneb))]
-    blobs_bundle: BlobsBundle<E>,
+    pub blobs_bundle: BlobsBundle<E>,
 }
 
 #[superstruct(
@@ -137,8 +137,8 @@ pub struct HeaderSubmission<E: EthSpec> {
 #[ssz(enum_behaviour = "transparent")]
 pub struct SignedHeaderSubmission<E: EthSpec> {
     #[superstruct(flatten)]
-    message: HeaderSubmission<E>,
-    signature: Signature,
+    pub message: HeaderSubmission<E>,
+    pub signature: Signature,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
@@ -160,16 +160,16 @@ pub struct SignedCancellation {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TopBidUpdate {
     #[serde(with = "serde_utils::quoted_u64")]
-    timestamp: u64,
-    slot: Slot,
+    pub timestamp: u64,
+    pub slot: Slot,
     #[serde(with = "serde_utils::quoted_u64")]
-    block_number: u64,
-    block_hash: ExecutionBlockHash,
-    parent_hash: ExecutionBlockHash,
-    builder_pubkey: PublicKeyBytes,
-    fee_recipient: Address,
+    pub block_number: u64,
+    pub block_hash: ExecutionBlockHash,
+    pub parent_hash: ExecutionBlockHash,
+    pub builder_pubkey: PublicKeyBytes,
+    pub fee_recipient: Address,
     #[serde(with = "serde_utils::quoted_u256")]
-    value: Uint256,
+    pub value: Uint256,
 }
 
 // Builder API responses
@@ -182,8 +182,8 @@ pub enum Filtering {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ValidatorPreferences {
-    filtering: Filtering,
-    trusted_builders: Option<Vec<String>>,
+    pub filtering: Filtering,
+    pub trusted_builders: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -231,6 +231,45 @@ pub struct BidTraceV2WithTimestamp {
     pub timestamp: i64,
     #[serde(with = "serde_utils::quoted_i64")]
     pub timestamp_ms: i64,
+}
+
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+pub struct SignedHeaderResponse<E: EthSpec> {
+    #[superstruct(flatten)]
+    pub message: HeaderResponse<E>,
+    pub signature: Signature,
+}
+
+#[superstruct(
+    variants(Bellatrix, Capella, Deneb, Electra),
+    variant_attributes(
+        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
+        serde(bound = "E: EthSpec", deny_unknown_fields),
+    ),
+    map_into(ExecutionPayloadHeader),
+    map_ref_into(ExecutionPayloadHeader)
+)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+#[serde(bound = "E: EthSpec", untagged)]
+#[ssz(enum_behaviour = "transparent")]
+pub struct HeaderResponse<E: EthSpec> {
+    #[superstruct(flatten)]
+    pub execution_payload_header: ExecutionPayloadHeader<E>,
+    #[superstruct(only(Deneb))]
+    pub blobs_bundle: BlobsBundle<E>,
+    pub value: Uint256,
+    pub pubkey: PublicKeyBytes,
 }
 
 // Builder API response types
