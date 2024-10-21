@@ -247,7 +247,7 @@ pub struct BidTraceV2WithTimestamp {
 #[ssz(enum_behaviour = "transparent")]
 pub struct SignedHeaderResponse<E: EthSpec> {
     #[superstruct(flatten)]
-    pub message: HeaderSubmission<E>,
+    pub message: HeaderResponse<E>,
     pub signature: Signature,
 }
 
