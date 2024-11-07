@@ -9,14 +9,14 @@ members = [
   "relay-api-types",
   "relay-client",
   "relay-server",
-  "common"
+  "common",
 ]
 
 [workspace.dependencies]
 async-trait = "0.1"
 axum = { version = "0.7", features = ["ws"] }
 bytes = "1.6"
-eth2 = { git = "https://github.com/realbigsean/lighthouse.git", rev = "10ce60633859ab4f20308ef42bb88e219e09fee5" }
+eth2 = { git = "https://github.com/paulhauner/lighthouse.git", rev = "b1d240d4b77768abf85c3dd87cd6c0714cd3b211" }
 ethereum_serde_utils = "0.5.2"
 ethereum_ssz = "0.5.4"
 ethereum_ssz_derive = "0.5.4"
@@ -27,8 +27,11 @@ reqwest = { version = "0.12.5", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 superstruct = "0.8"
-tokio = { version = "1", default-features = false, features = ["signal", "rt-multi-thread"] }
+tokio = { version = "1", default-features = false, features = [
+  "signal",
+  "rt-multi-thread",
+] }
 tokio-tungstenite = "0.24.0"
 tracing = { version = "0.1", features = ["attributes"] }
-types = { git = "https://github.com/realbigsean/lighthouse.git", rev = "10ce60633859ab4f20308ef42bb88e219e09fee5" }
+types = { git = "https://github.com/paulhauner/lighthouse.git", rev = "b1d240d4b77768abf85c3dd87cd6c0714cd3b211" }
 rand = "0.8"
