@@ -8,7 +8,7 @@ use axum::{
 };
 use builder_api_types::{
     eth_spec::EthSpec, fork_versioned_response::EmptyMetadata, ExecutionBlockHash,
-    ForkVersionedResponse, PublicKeyBytes, SignedBlindedBeaconBlock,
+    ForkVersionedResponse, FullPayloadContents, PublicKeyBytes, SignedBlindedBeaconBlock,
     SignedValidatorRegistrationData, Slot,
 };
 use ethereum_apis_common::build_response;
@@ -64,10 +64,18 @@ where
         .as_ref()
         .submit_blinded_block(block)
         .await
-        .map(|payload| ForkVersionedResponse {
-            version: Some(payload.fork_name()),
-            metadata: EmptyMetadata {},
-            data: payload,
+        .map(|payload| {
+            let fork_name = match &payload {
+                FullPayloadContents::Payload(payload) => payload.fork_name(),
+                FullPayloadContents::PayloadAndBlobs(payload_and_blobs) => {
+                    payload_and_blobs.execution_payload.fork_name()
+                }
+            };
+            ForkVersionedResponse {
+                version: Some(fork_name),
+                metadata: EmptyMetadata {},
+                data: payload,
+            }
         });
     build_response(res).await
 }

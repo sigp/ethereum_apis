@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use builder_api_types::{
-    builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ExecutionPayload,
-    ForkName, PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData, Slot,
+    builder_bid::SignedBuilderBid, eth_spec::EthSpec, ExecutionBlockHash, ForkName,
+    FullPayloadContents, PublicKeyBytes, SignedBlindedBeaconBlock, SignedValidatorRegistrationData,
+    Slot,
 };
 use ethereum_apis_common::ErrorResponse;
 
@@ -15,7 +16,7 @@ pub trait Builder<E: EthSpec> {
     async fn submit_blinded_block(
         &self,
         block: SignedBlindedBeaconBlock<E>,
-    ) -> Result<ExecutionPayload<E>, ErrorResponse>;
+    ) -> Result<FullPayloadContents<E>, ErrorResponse>;
 
     async fn get_header(
         &self,
