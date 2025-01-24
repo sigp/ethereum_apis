@@ -4,16 +4,119 @@ use axum::{
     extract::{FromRequest, Request},
     response::{IntoResponse, Response},
 };
-use beacon_api_types::ForkVersionDeserialize;
+use beacon_api_types::{
+    fork_versioned_response::EmptyMetadata, ForkName, ForkVersionDecode, ForkVersionDeserialize,
+    ForkVersionedResponse,
+};
 use bytes::Bytes;
 use flate2::read::GzDecoder;
 use http::header::CONTENT_ENCODING;
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
-use std::io::Read;
+use ssz::Encode;
+use std::{io::Read, str::FromStr};
 use tracing::error;
 
 pub const CONSENSUS_VERSION_HEADER: &'static str = "Eth-Consensus-Version";
+
+pub async fn build_response_with_headers<T>(
+    result: Result<T, ErrorResponse>,
+    content_type: ContentType,
+    fork_name: ForkName,
+) -> Result<Response<Body>, StatusCode>
+where
+    T: Serialize + Encode + Send + 'static,
+{
+    let response_builder = Response::builder();
+
+    let resp = match result {
+        Ok(body) => {
+            let mut response = response_builder.status(200);
+
+            if let Some(response_headers) = response.headers_mut() {
+                response_headers.insert(
+                    CONSENSUS_VERSION_HEADER,
+                    HeaderValue::from_str(&fork_name.to_string()).map_err(|e| {
+                        error!(error = ?e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?,
+                );
+
+                response_headers.insert(
+                    CONTENT_TYPE,
+                    HeaderValue::from_str(&content_type.to_string()).map_err(|e| {
+                        error!(error = ?e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?,
+                );
+            }
+
+            let body_content = match content_type {
+                ContentType::Json => {
+                    let body = ForkVersionedResponse {
+                        version: Some(fork_name),
+                        metadata: EmptyMetadata {},
+                        data: body,
+                    };
+                    tokio::task::spawn_blocking(move || {
+                        serde_json::to_vec(&body).map_err(|e| {
+                            error!(error = ?e);
+                            StatusCode::INTERNAL_SERVER_ERROR
+                        })
+                    })
+                    .await
+                    .map_err(|e| {
+                        error!(error = ?e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })??
+                }
+                ContentType::Ssz => tokio::task::spawn_blocking(move || T::as_ssz_bytes(&body))
+                    .await
+                    .map_err(|e| {
+                        error!(error = ?e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?,
+            };
+
+            response.body(Body::from(body_content)).map_err(|e| {
+                error!(error = ?e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        }
+        Err(body) => {
+            let mut response = response_builder.status(body.code);
+
+            if let Some(response_headers) = response.headers_mut() {
+                response_headers.insert(
+                    CONTENT_TYPE,
+                    HeaderValue::from_str(&content_type.to_string()).map_err(|e| {
+                        error!(error = ?e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?,
+                );
+            }
+
+            let body_content = tokio::task::spawn_blocking(move || {
+                serde_json::to_vec(&body).map_err(|e| {
+                    error!(error = ?e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })
+            })
+            .await
+            .map_err(|e| {
+                error!(error = ?e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })??;
+
+            response.body(Body::from(body_content)).map_err(|e| {
+                error!(error = ?e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })
+        }
+    };
+
+    resp
+}
 
 pub async fn build_response<T>(
     result: Result<T, ErrorResponse>,
@@ -113,6 +216,50 @@ where
                 return Ok(T::from_ssz_bytes(&bytes)
                     .map(Ssz)
                     .map_err(|_| StatusCode::BAD_REQUEST.into_response())?);
+            }
+        }
+
+        Err(StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response())
+    }
+}
+
+#[must_use]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct JsonOrSszWithFork<T>(pub T);
+
+#[async_trait]
+impl<T, S> FromRequest<S> for JsonOrSszWithFork<T>
+where
+    T: serde::de::DeserializeOwned + ForkVersionDecode + 'static,
+    S: Send + Sync,
+{
+    type Rejection = Response;
+
+    async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
+        let headers = req.headers().clone();
+        let content_type = headers
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok());
+
+        let fork_name = headers
+            .get("")
+            .and_then(|value| ForkName::from_str(value.to_str().unwrap()).ok());
+
+        let bytes = Bytes::from_request(req, _state)
+            .await
+            .map_err(IntoResponse::into_response)?;
+
+        if let Some(content_type) = content_type {
+            if content_type.starts_with(&ContentType::Json.to_string()) {
+                let payload: T = serde_json::from_slice(&bytes)
+                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
+                return Ok(Self(payload));
+            }
+
+            if content_type.starts_with(&ContentType::Ssz.to_string()) {
+                let payload = T::from_ssz_bytes_by_fork(&bytes, fork_name.unwrap())
+                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
+                return Ok(Self(payload));
             }
         }
 

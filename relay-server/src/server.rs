@@ -189,9 +189,8 @@ where
 
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(message)) = receiver.next().await {
-            match message {
-                Message::Close(_) => break,
-                _ => {}
+            if let Message::Close(_) = message {
+                break;
             }
         }
     });

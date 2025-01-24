@@ -7,11 +7,13 @@ use axum::{
     Json, Router,
 };
 use builder_api_types::{
-    eth_spec::EthSpec, fork_versioned_response::EmptyMetadata, ExecutionBlockHash,
-    ForkVersionedResponse, PublicKeyBytes, SignedBlindedBeaconBlock,
+    eth_spec::EthSpec, ExecutionBlockHash, PublicKeyBytes, SignedBlindedBeaconBlock,
     SignedValidatorRegistrationData, Slot,
 };
-use ethereum_apis_common::build_response;
+use ethereum_apis_common::{
+    build_response, build_response_with_headers, ContentType, JsonOrSszWithFork,
+};
+use http::{header::CONTENT_TYPE, HeaderMap};
 
 use crate::builder::Builder;
 
@@ -52,24 +54,25 @@ where
 }
 
 async fn submit_blinded_block<I, A, E>(
+    headers: HeaderMap,
     State(api_impl): State<I>,
-    Json(block): Json<SignedBlindedBeaconBlock<E>>,
+    JsonOrSszWithFork(block): JsonOrSszWithFork<SignedBlindedBeaconBlock<E>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
-    let res = api_impl
-        .as_ref()
-        .submit_blinded_block(block)
-        .await
-        .map(|payload| ForkVersionedResponse {
-            version: Some(payload.fork_name()),
-            metadata: EmptyMetadata {},
-            data: payload,
-        });
-    build_response(res).await
+    let content_type_header = headers.get(CONTENT_TYPE);
+    let content_type = content_type_header.and_then(|value| value.to_str().ok());
+    let content_type = match content_type {
+        Some("application/octet-stream") => ContentType::Ssz,
+        _ => ContentType::Json,
+    };
+    let slot = block.slot();
+    let res = api_impl.as_ref().submit_blinded_block(block).await;
+
+    build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot)).await
 }
 
 async fn get_status() -> StatusCode {
@@ -77,6 +80,7 @@ async fn get_status() -> StatusCode {
 }
 
 async fn get_header<I, A, E>(
+    headers: HeaderMap,
     State(api_impl): State<I>,
     Path((slot, parent_hash, pubkey)): Path<(Slot, ExecutionBlockHash, PublicKeyBytes)>,
 ) -> Result<Response<Body>, StatusCode>
@@ -85,14 +89,15 @@ where
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
+    let content_type_header = headers.get(CONTENT_TYPE);
+    let content_type = content_type_header.and_then(|value| value.to_str().ok());
+    let content_type = match content_type {
+        Some("application/octet-stream") => ContentType::Ssz,
+        _ => ContentType::Json,
+    };
     let res = api_impl
         .as_ref()
         .get_header(slot, parent_hash, pubkey)
-        .await
-        .map(|signed_bid| ForkVersionedResponse {
-            version: Some(api_impl.as_ref().fork_name_at_slot(slot)),
-            metadata: EmptyMetadata {},
-            data: signed_bid,
-        });
-    build_response(res).await
+        .await;
+    build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot)).await
 }
