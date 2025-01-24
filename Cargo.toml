@@ -16,7 +16,7 @@ members = [
 async-trait = "0.1"
 axum = { version = "0.7", features = ["ws"] }
 bytes = "1.6"
-eth2 = { git = "https://github.com/eserilev/lighthouse.git", rev = "098d5b5270df3cc5564d573be42965b1e2f623db" }
+eth2 = { git = "https://github.com/eserilev/lighthouse.git", rev = "6e664dcddf610b4dd8dd59f56f7084d46bd91f74" }
 ethereum_serde_utils = "0.7"
 ethereum_ssz = "0.7"
 ethereum_ssz_derive = "0.7"
