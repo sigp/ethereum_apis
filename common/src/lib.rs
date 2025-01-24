@@ -17,7 +17,7 @@ use ssz::Encode;
 use std::{io::Read, str::FromStr};
 use tracing::error;
 
-pub const CONSENSUS_VERSION_HEADER: &'static str = "Eth-Consensus-Version";
+pub const CONSENSUS_VERSION_HEADER: &str = "Eth-Consensus-Version";
 
 pub async fn build_response_with_headers<T>(
     result: Result<T, ErrorResponse>,
@@ -213,9 +213,9 @@ where
                 let bytes = Bytes::from_request(req, state)
                     .await
                     .map_err(IntoResponse::into_response)?;
-                return Ok(T::from_ssz_bytes(&bytes)
+                return T::from_ssz_bytes(&bytes)
                     .map(Ssz)
-                    .map_err(|_| StatusCode::BAD_REQUEST.into_response())?);
+                    .map_err(|_| StatusCode::BAD_REQUEST.into_response());
             }
         }
 
