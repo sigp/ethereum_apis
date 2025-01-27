@@ -4,7 +4,7 @@ pub use builder_api_types::*;
 pub use builder_bid::SignedBuilderBid;
 use ethereum_apis_common::ContentType;
 pub use ethereum_apis_common::ErrorResponse;
-use reqwest::header::CONTENT_TYPE;
+use reqwest::header::{ACCEPT, CONTENT_TYPE};
 use reqwest::Client;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -162,7 +162,7 @@ impl BuilderClient {
 
         let mut headers = HeaderMap::new();
         headers.insert(
-            CONTENT_TYPE,
+            ACCEPT,
             HeaderValue::from_str(&content_type.to_string()).unwrap(),
         );
 
