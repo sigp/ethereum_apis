@@ -9,3 +9,5 @@ ethereum-apis-common = { path = "../common" }
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+ethereum_ssz.workspace = true
+axum.workspace = true
