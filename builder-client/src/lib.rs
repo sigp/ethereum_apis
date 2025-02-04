@@ -1,6 +1,6 @@
 use axum::http::HeaderMap;
 use axum::http::HeaderValue;
-pub use builder_api_types::*;
+use builder_api_types::*;
 pub use builder_bid::SignedBuilderBid;
 use ethereum_apis_common::ContentType;
 pub use ethereum_apis_common::ErrorResponse;
