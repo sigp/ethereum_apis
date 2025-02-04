@@ -23,6 +23,7 @@ ethereum_ssz_derive = "0.7"
 flate2 = "1.0"
 futures = "0.3.30"
 http = "1"
+mediatype = "0.19.13"
 reqwest = { version = "0.12.5", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }

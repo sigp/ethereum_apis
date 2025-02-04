@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use axum::{
     body::Body,
     extract::{Path, State},
@@ -11,9 +13,13 @@ use builder_api_types::{
     SignedValidatorRegistrationData, Slot,
 };
 use ethereum_apis_common::{
-    build_response, build_response_with_headers, ContentType, JsonOrSszWithFork,
+    build_response, build_response_with_headers, Accept, ContentType, JsonOrSszWithFork,
 };
-use http::{header::CONTENT_TYPE, HeaderMap};
+use http::{
+    header::{ACCEPT, CONTENT_TYPE},
+    HeaderMap,
+};
+use tracing::info;
 
 use crate::builder::Builder;
 
@@ -89,12 +95,21 @@ where
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
-    let content_type_header = headers.get(CONTENT_TYPE);
-    let content_type = content_type_header.and_then(|value| value.to_str().ok());
-    let content_type = match content_type {
-        Some("application/octet-stream") => ContentType::Ssz,
-        _ => ContentType::Json,
+    let content_type_header = headers.get(ACCEPT);
+    let content_type_str = content_type_header
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("application/json");
+    let content_type = match Accept::from_str(content_type_str) {
+        Ok(Accept::Ssz) => {
+            info!("REQUESTED SSZ");
+            ContentType::Ssz
+        },
+        _ => {
+            info!("REQUESTED JSON");
+            ContentType::Json
+        },
     };
+
     let res = api_impl
         .as_ref()
         .get_header(slot, parent_hash, pubkey)

@@ -12,9 +12,10 @@ use bytes::Bytes;
 use flate2::read::GzDecoder;
 use http::header::CONTENT_ENCODING;
 use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
+use mediatype::{names, MediaType, MediaTypeList};
 use serde::{Deserialize, Serialize};
 use ssz::Encode;
-use std::{io::Read, str::FromStr};
+use std::{fmt, io::Read, str::FromStr};
 use tracing::error;
 
 pub const CONSENSUS_VERSION_HEADER: &str = "Eth-Consensus-Version";
@@ -462,5 +463,80 @@ where
         )
         .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
         Ok(Self(result))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Accept {
+    Json,
+    Ssz,
+    Any,
+}
+
+impl fmt::Display for Accept {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Accept::Ssz => write!(f, "application/octet-stream"),
+            Accept::Json => write!(f, "application/json"),
+            Accept::Any => write!(f, "*/*"),
+        }
+    }
+}
+
+impl FromStr for Accept {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let media_type_list = MediaTypeList::new(s);
+
+        // [q-factor weighting]: https://datatracker.ietf.org/doc/html/rfc7231#section-5.3.2
+        // find the highest q-factor supported accept type
+        let mut highest_q = 0_u16;
+        let mut accept_type = None;
+
+        const APPLICATION: &str = names::APPLICATION.as_str();
+        const OCTET_STREAM: &str = names::OCTET_STREAM.as_str();
+        const JSON: &str = names::JSON.as_str();
+        const STAR: &str = names::_STAR.as_str();
+        const Q: &str = names::Q.as_str();
+
+        media_type_list.into_iter().for_each(|item| {
+            if let Ok(MediaType {
+                ty,
+                subty,
+                suffix: _,
+                params,
+            }) = item
+            {
+                let q_accept = match (ty.as_str(), subty.as_str()) {
+                    (APPLICATION, OCTET_STREAM) => Some(Accept::Ssz),
+                    (APPLICATION, JSON) => Some(Accept::Json),
+                    (STAR, STAR) => Some(Accept::Any),
+                    _ => None,
+                }
+                .map(|item_accept_type| {
+                    let q_val = params
+                        .iter()
+                        .find_map(|(n, v)| match n.as_str() {
+                            Q => {
+                                Some((v.as_str().parse::<f32>().unwrap_or(0_f32) * 1000_f32) as u16)
+                            }
+                            _ => None,
+                        })
+                        .or(Some(1000_u16));
+
+                    (q_val.unwrap(), item_accept_type)
+                });
+
+                match q_accept {
+                    Some((q, accept)) if q > highest_q => {
+                        highest_q = q;
+                        accept_type = Some(accept);
+                    }
+                    _ => (),
+                }
+            }
+        });
+        accept_type.ok_or_else(|| "accept header is not supported".to_string())
     }
 }
