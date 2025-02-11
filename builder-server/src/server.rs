@@ -78,7 +78,12 @@ where
     let slot = block.slot();
     let res = api_impl.as_ref().submit_blinded_block(block).await;
 
-    build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot)).await
+    dbg!("in submit_blinded_block");
+    let response =
+        build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot))
+            .await;
+    dbg!(&response);
+    response
 }
 
 async fn get_status() -> StatusCode {
@@ -103,16 +108,17 @@ where
         Ok(Accept::Ssz) => {
             info!("REQUESTED SSZ");
             ContentType::Ssz
-        },
+        }
         _ => {
             info!("REQUESTED JSON");
             ContentType::Json
-        },
+        }
     };
 
     let res = api_impl
         .as_ref()
         .get_header(slot, parent_hash, pubkey)
         .await;
+    tracing::info!("Got response from builder, constructing response");
     build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot)).await
 }
