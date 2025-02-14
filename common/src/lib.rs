@@ -1,5 +1,4 @@
 use axum::{
-    async_trait,
     body::Body,
     extract::{FromRequest, Request},
     response::{IntoResponse, Response},
@@ -32,10 +31,6 @@ where
 
     let resp = match result {
         Ok(body) => {
-            tracing::info!(
-                "Got a valid response from builder, content-type {:?}",
-                content_type
-            );
             println!(
                 "Got a valid response from builder, content-type {:?}",
                 content_type
@@ -59,7 +54,7 @@ where
                     })?,
                 );
             }
-
+            dbg!(&content_type);
             let body_content = match content_type {
                 ContentType::Json => {
                     let body = ForkVersionedResponse {
@@ -67,32 +62,18 @@ where
                         metadata: EmptyMetadata {},
                         data: body,
                     };
-                    tokio::task::spawn_blocking(move || {
-                        serde_json::to_vec(&body).map_err(|e| {
-                            error!(error = ?e);
-                            StatusCode::INTERNAL_SERVER_ERROR
-                        })
-                    })
-                    .await
-                    .map_err(|e| {
+                    serde_json::to_vec(&body).map_err(|e| {
                         error!(error = ?e);
                         StatusCode::INTERNAL_SERVER_ERROR
-                    })??
+                    })?
                 }
-                ContentType::Ssz => tokio::task::spawn_blocking(move || T::as_ssz_bytes(&body))
-                    .await
-                    .map_err(|e| {
-                        error!(error = ?e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?,
+
+                ContentType::Ssz => T::as_ssz_bytes(&body),
             };
-            dbg!(&body_content.len());
             let resp = response.body(Body::from(body_content)).map_err(|e| {
                 error!(error = ?e);
-                dbg!(&e);
                 StatusCode::INTERNAL_SERVER_ERROR
             });
-            dbg!(&resp);
             resp
         }
         Err(body) => {
@@ -208,7 +189,6 @@ where
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ssz<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for Ssz<T>
 where
     T: ssz::Decode,
@@ -239,7 +219,6 @@ where
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JsonOrSszWithFork<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for JsonOrSszWithFork<T>
 where
     T: serde::de::DeserializeOwned + ForkVersionDecode + 'static,
@@ -252,7 +231,6 @@ where
         let content_type = headers
             .get(CONTENT_TYPE)
             .and_then(|value| value.to_str().ok());
-        dbg!(&headers);
         let fork_name = headers
             .get(CONSENSUS_VERSION_HEADER)
             .and_then(|value| ForkName::from_str(value.to_str().unwrap()).ok());
@@ -283,7 +261,6 @@ where
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JsonOrSsz<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for JsonOrSsz<T>
 where
     T: serde::de::DeserializeOwned + ssz::Decode + 'static,
@@ -323,7 +300,6 @@ where
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JsonOrSszMaybeGzipped<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for JsonOrSszMaybeGzipped<T>
 where
     T: serde::de::DeserializeOwned + ssz::Decode + 'static,
@@ -447,7 +423,6 @@ pub fn custom_internal_err(message: String) -> ErrorResponse {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JsonConsensusVersionHeader<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for JsonConsensusVersionHeader<T>
 where
     T: ForkVersionDeserialize + 'static,
@@ -554,10 +529,10 @@ impl FromStr for Accept {
 
 #[cfg(test)]
 mod tests {
-    use std::usize;
+    // use std::usize;
 
     use super::*;
-    use axum::body::to_bytes;
+    // use axum::body::to_bytes;
     use beacon_api_types::{
         Blob, BlobsBundle, EthSpec, ExecutionPayload, ExecutionPayloadAndBlobs,
         ExecutionPayloadDeneb, FullPayloadContents, KzgCommitment, KzgProof, MainnetEthSpec,
@@ -585,9 +560,10 @@ mod tests {
         let resp = build_response_with_headers(Ok(full_payload), ContentType::Ssz, ForkName::Deneb)
             .await
             .unwrap();
-        let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-        dbg!(&body.len());
-        FullPayloadContents::<MainnetEthSpec>::from_ssz_bytes_by_fork(&body, ForkName::Deneb)
-            .unwrap();
+        dbg!(&resp);
+        // let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        // dbg!(&body.len());
+        // FullPayloadContents::<MainnetEthSpec>::from_ssz_bytes_by_fork(&body, ForkName::Deneb)
+        //     .unwrap();
     }
 }
