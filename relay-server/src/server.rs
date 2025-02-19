@@ -71,7 +71,7 @@ where
     A: Builder<E>,
 {
     let result = api_impl.as_ref().submit_block(query_params, body).await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// SubmitBlockOptimisticV2 - POST /relay/v1/builder/blocks_optimistic_v2
@@ -90,7 +90,7 @@ where
         .as_ref()
         .submit_block_optimistic_v2(query_params, body)
         .await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// SubmitHeader - POST /relay/v1/builder/headers
@@ -106,7 +106,7 @@ where
     A: Builder<E>,
 {
     let result = api_impl.as_ref().submit_header(query_params, body).await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// SubmitCancellation - POST /relay/v1/builder/cancel_bid
@@ -121,7 +121,7 @@ where
     A: Builder<E>,
 {
     let result = api_impl.as_ref().submit_cancellation(body).await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// GetValidators - GET /relay/v1/builder/validators
@@ -133,7 +133,7 @@ where
     E: EthSpec,
 {
     let result = api_impl.as_ref().get_validators().await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// GetTopBids - GET /relay/v1/builder/top_bids
@@ -173,7 +173,7 @@ where
         while let Some(update) = stream.next().await {
             match serde_json::to_string(&update) {
                 Ok(json) => {
-                    if let Err(e) = sender.send(Message::Text(json)).await {
+                    if let Err(e) = sender.send(Message::text(json)).await {
                         tracing::error!("Error sending message: {:?}", e);
                         break;
                     }
@@ -213,7 +213,7 @@ where
     A: Data,
 {
     let result = api_impl.as_ref().get_delivered_payloads(query_params).await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// GetReceivedBids - GET /relay/v1/data/bidtraces/builder_blocks_received
@@ -227,7 +227,7 @@ where
     A: Data,
 {
     let result = api_impl.as_ref().get_received_bids(query_params).await;
-    build_response(result).await
+    build_response(result)
 }
 
 /// GetValidatorRegistration - GET /relay/v1/data/validator_registration
@@ -244,5 +244,5 @@ where
         .as_ref()
         .get_validator_registration(query_params)
         .await;
-    build_response(result).await
+    build_response(result)
 }

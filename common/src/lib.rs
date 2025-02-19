@@ -19,7 +19,7 @@ use tracing::error;
 
 pub const CONSENSUS_VERSION_HEADER: &str = "Eth-Consensus-Version";
 
-pub async fn build_response_with_headers<T>(
+pub fn build_response_with_headers<T>(
     result: Result<T, ErrorResponse>,
     content_type: ContentType,
     fork_name: ForkName,
@@ -31,10 +31,6 @@ where
 
     let resp = match result {
         Ok(body) => {
-            println!(
-                "Got a valid response from builder, content-type {:?}",
-                content_type
-            );
             let mut response = response_builder.status(200);
 
             if let Some(response_headers) = response.headers_mut() {
@@ -54,7 +50,6 @@ where
                     })?,
                 );
             }
-            dbg!(&content_type);
             let body_content = match content_type {
                 ContentType::Json => {
                     let body = ForkVersionedResponse {
@@ -70,11 +65,10 @@ where
 
                 ContentType::Ssz => T::as_ssz_bytes(&body),
             };
-            let resp = response.body(Body::from(body_content)).map_err(|e| {
+            response.body(Body::from(body_content)).map_err(|e| {
                 error!(error = ?e);
                 StatusCode::INTERNAL_SERVER_ERROR
-            });
-            resp
+            })
         }
         Err(body) => {
             let mut response = response_builder.status(body.code);
@@ -89,17 +83,10 @@ where
                 );
             }
 
-            let body_content = tokio::task::spawn_blocking(move || {
-                serde_json::to_vec(&body).map_err(|e| {
-                    error!(error = ?e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-            })
-            .await
-            .map_err(|e| {
+            let body_content = serde_json::to_vec(&body).map_err(|e| {
                 error!(error = ?e);
                 StatusCode::INTERNAL_SERVER_ERROR
-            })??;
+            })?;
 
             response.body(Body::from(body_content)).map_err(|e| {
                 error!(error = ?e);
@@ -111,9 +98,7 @@ where
     resp
 }
 
-pub async fn build_response<T>(
-    result: Result<T, ErrorResponse>,
-) -> Result<Response<Body>, StatusCode>
+pub fn build_response<T>(result: Result<T, ErrorResponse>) -> Result<Response<Body>, StatusCode>
 where
     T: Serialize + Send + 'static,
 {
@@ -133,17 +118,10 @@ where
                 );
             }
 
-            let body_content = tokio::task::spawn_blocking(move || {
-                serde_json::to_vec(&body).map_err(|e| {
-                    error!(error = ?e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-            })
-            .await
-            .map_err(|e| {
+            let body_content = serde_json::to_vec(&body).map_err(|e| {
                 error!(error = ?e);
                 StatusCode::INTERNAL_SERVER_ERROR
-            })??;
+            })?;
 
             response.body(Body::from(body_content)).map_err(|e| {
                 error!(error = ?e);
@@ -163,17 +141,10 @@ where
                 );
             }
 
-            let body_content = tokio::task::spawn_blocking(move || {
-                serde_json::to_vec(&body).map_err(|e| {
-                    error!(error = ?e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })
-            })
-            .await
-            .map_err(|e| {
+            let body_content = serde_json::to_vec(&body).map_err(|e| {
                 error!(error = ?e);
                 StatusCode::INTERNAL_SERVER_ERROR
-            })??;
+            })?;
 
             response.body(Body::from(body_content)).map_err(|e| {
                 error!(error = ?e);
@@ -524,46 +495,5 @@ impl FromStr for Accept {
             }
         });
         accept_type.ok_or_else(|| "accept header is not supported".to_string())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // use std::usize;
-
-    use super::*;
-    // use axum::body::to_bytes;
-    use beacon_api_types::{
-        Blob, BlobsBundle, EthSpec, ExecutionPayload, ExecutionPayloadAndBlobs,
-        ExecutionPayloadDeneb, FullPayloadContents, KzgCommitment, KzgProof, MainnetEthSpec,
-    };
-
-    #[tokio::test]
-    async fn test_something() {
-        let payload_and_blobs: ExecutionPayloadAndBlobs<MainnetEthSpec> =
-            ExecutionPayloadAndBlobs {
-                blobs_bundle: BlobsBundle {
-                    commitments: vec![KzgCommitment::empty_for_testing()].into(),
-                    proofs: vec![KzgProof::empty()].into(),
-                    blobs: vec![Blob::<MainnetEthSpec>::new(vec![
-                        42;
-                        MainnetEthSpec::bytes_per_blob()
-                    ])
-                    .unwrap()]
-                    .into(),
-                },
-                execution_payload: ExecutionPayload::Deneb(ExecutionPayloadDeneb {
-                    ..Default::default()
-                }),
-            };
-        let full_payload = FullPayloadContents::PayloadAndBlobs(payload_and_blobs);
-        let resp = build_response_with_headers(Ok(full_payload), ContentType::Ssz, ForkName::Deneb)
-            .await
-            .unwrap();
-        dbg!(&resp);
-        // let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-        // dbg!(&body.len());
-        // FullPayloadContents::<MainnetEthSpec>::from_ssz_bytes_by_fork(&body, ForkName::Deneb)
-        //     .unwrap();
     }
 }
