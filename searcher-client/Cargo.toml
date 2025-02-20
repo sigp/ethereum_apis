@@ -1,0 +1,16 @@
+[package]
+name = "searcher-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+alloy-primitives = "0.8"
+alloy-rpc-types-mev = "0.8"
+eyre = "0.6.12"
+url = "2.5.4"
+reqwest = { version = "0.12", features = ["json"] }
+
+searcher-api-types = { path = "../searcher-api-types" }
