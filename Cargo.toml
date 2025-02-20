@@ -9,6 +9,7 @@ members = [
   "relay-api-types",
   "relay-client",
   "relay-server",
+  "searcher-api-types",
   "common"
 ]
 
