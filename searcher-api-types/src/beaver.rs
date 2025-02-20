@@ -39,3 +39,33 @@ pub struct BeaverBundle {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub refund_transaction_hashes: Vec<TxHash>,
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_beaver_bundle_default_serialisation() {
+        assert!(serde_json::to_string(&BeaverBundle::default()).is_ok());
+        assert_eq!(
+            serde_json::to_string(&BeaverBundle::default()).unwrap(),
+            "{\"txs\":[],\"blockNumber\":\"0x0\"}".to_string()
+        );
+
+        assert!(serde_json::to_string(&BeaverBundle {
+            transactions: vec![],
+            block_number: 21862873,
+            ..Default::default()
+        })
+        .is_ok());
+        assert_eq!(
+            serde_json::to_string(&BeaverBundle {
+                transactions: vec![],
+                block_number: 21862873,
+                ..Default::default()
+            })
+            .unwrap(),
+            "{\"txs\":[],\"blockNumber\":\"0x14d99d9\"}".to_string()
+        );
+    }
+}
