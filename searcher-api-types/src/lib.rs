@@ -1,4 +1,4 @@
-use alloy_primitives::{BlockNumber, Bytes};
+use alloy_primitives::{BlockNumber, Bytes, TxHash};
 use alloy_rlp::encode;
 use serde::{Deserialize, Serialize};
 
@@ -61,6 +61,14 @@ impl SendBundleRequest {
                 .iter()
                 .map(|tx| encode(tx).into())
                 .collect(),
+        }
+    }
+
+    pub fn reverting_tx_hashes(&self) -> Vec<TxHash> {
+        match self {
+            SendBundleRequest::Flashbots(_) => vec![],
+            SendBundleRequest::Beaver(bundle) => bundle.reverting_transaction_hashes.clone(),
+            SendBundleRequest::Titan(bundle) => bundle.reverting_transaction_hashes.clone(),
         }
     }
 }
