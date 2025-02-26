@@ -1,5 +1,7 @@
 //! RPC types that are supported by Beaverbuild
-use alloy_primitives::{Address, BlockNumber, TxHash};
+use alloy_primitives::{hex, Address, BlockNumber, TxHash};
+use alloy_rlp::Decodable;
+use eyre::eyre;
 use reth_primitives::TransactionSigned;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
@@ -38,6 +40,26 @@ pub struct BeaverBundle {
     /// The hashes of transactions in the bundle that the refund will be based on. If it's empty, we'll use the last transaction
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub refund_transaction_hashes: Vec<TxHash>,
+}
+
+impl BeaverBundle {
+    pub fn from_rlp_hex(txs: Vec<String>, block_number: BlockNumber) -> eyre::Result<Self> {
+        Ok(Self {
+            transactions: txs
+                .iter()
+                .map(|hex_string| {
+                    hex::decode(hex_string)
+                        .map_err(|e| eyre!("Invalid hexadecimal string: {e:?}"))
+                        .and_then(|decoded_bytes| {
+                            TransactionSigned::decode(&mut decoded_bytes.as_slice())
+                                .map_err(|e| eyre!("Illegal RLP bytes for transaction: {e:?}"))
+                        })
+                })
+                .collect::<Result<Vec<TransactionSigned>, _>>()?,
+            block_number,
+            ..Self::default()
+        })
+    }
 }
 
 #[cfg(test)]
