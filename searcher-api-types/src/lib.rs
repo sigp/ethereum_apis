@@ -1,3 +1,5 @@
+use alloy_primitives::{BlockNumber, Bytes};
+use alloy_rlp::encode;
 use serde::{Deserialize, Serialize};
 
 pub mod beaver;
@@ -19,4 +21,46 @@ pub enum SendBundleRequest {
     Beaver(BeaverBundle),
     /// Titan Builder bundle
     Titan(TitanBundle),
+}
+
+impl SendBundleRequest {
+    pub fn min_timestamp(&self) -> Option<u64> {
+        match self {
+            SendBundleRequest::Flashbots(bundle) => bundle.min_timestamp,
+            SendBundleRequest::Beaver(bundle) => bundle.min_timestamp,
+            SendBundleRequest::Titan(bundle) => bundle.min_timestamp,
+        }
+    }
+
+    pub fn max_timestamp(&self) -> Option<u64> {
+        match self {
+            SendBundleRequest::Flashbots(bundle) => bundle.max_timestamp,
+            SendBundleRequest::Beaver(bundle) => bundle.max_timestamp,
+            SendBundleRequest::Titan(bundle) => bundle.max_timestamp,
+        }
+    }
+
+    pub fn block_number(&self) -> BlockNumber {
+        match self {
+            SendBundleRequest::Flashbots(bundle) => bundle.block_number,
+            SendBundleRequest::Beaver(bundle) => bundle.block_number,
+            SendBundleRequest::Titan(bundle) => bundle.block_number,
+        }
+    }
+
+    pub fn tx_bytes(&self) -> Vec<Bytes> {
+        match self {
+            SendBundleRequest::Flashbots(bundle) => bundle.txs.clone(),
+            SendBundleRequest::Beaver(bundle) => bundle
+                .transactions
+                .iter()
+                .map(|tx| encode(tx).into())
+                .collect(),
+            SendBundleRequest::Titan(bundle) => bundle
+                .transactions
+                .iter()
+                .map(|tx| encode(tx).into())
+                .collect(),
+        }
+    }
 }
