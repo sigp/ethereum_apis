@@ -28,24 +28,24 @@ impl SendBundleRequest {
     pub fn min_timestamp(&self) -> Option<u64> {
         match self {
             SendBundleRequest::Flashbots(bundle) => bundle.min_timestamp,
-            SendBundleRequest::Beaver(bundle) => bundle.min_timestamp,
-            SendBundleRequest::Titan(bundle) => bundle.min_timestamp,
+            SendBundleRequest::Beaver(bundle) => bundle.bundle.min_timestamp,
+            SendBundleRequest::Titan(bundle) => bundle.bundle.min_timestamp,
         }
     }
 
     pub fn max_timestamp(&self) -> Option<u64> {
         match self {
             SendBundleRequest::Flashbots(bundle) => bundle.max_timestamp,
-            SendBundleRequest::Beaver(bundle) => bundle.max_timestamp,
-            SendBundleRequest::Titan(bundle) => bundle.max_timestamp,
+            SendBundleRequest::Beaver(bundle) => bundle.bundle.max_timestamp,
+            SendBundleRequest::Titan(bundle) => bundle.bundle.max_timestamp,
         }
     }
 
     pub fn block_number(&self) -> BlockNumber {
         match self {
             SendBundleRequest::Flashbots(bundle) => bundle.block_number,
-            SendBundleRequest::Beaver(bundle) => bundle.block_number,
-            SendBundleRequest::Titan(bundle) => bundle.block_number,
+            SendBundleRequest::Beaver(bundle) => bundle.bundle.block_number,
+            SendBundleRequest::Titan(bundle) => bundle.bundle.block_number,
         }
     }
 
@@ -53,12 +53,14 @@ impl SendBundleRequest {
         match self {
             SendBundleRequest::Flashbots(bundle) => bundle.txs.clone(),
             SendBundleRequest::Beaver(bundle) => bundle
-                .transactions
+                .bundle
+                .txs
                 .iter()
                 .map(|tx| encode(tx).into())
                 .collect(),
             SendBundleRequest::Titan(bundle) => bundle
-                .transactions
+                .bundle
+                .txs
                 .iter()
                 .map(|tx| encode(tx).into())
                 .collect(),
@@ -68,8 +70,8 @@ impl SendBundleRequest {
     pub fn reverting_tx_hashes(&self) -> Vec<TxHash> {
         match self {
             SendBundleRequest::Flashbots(_) => vec![],
-            SendBundleRequest::Beaver(bundle) => bundle.reverting_transaction_hashes.clone(),
-            SendBundleRequest::Titan(bundle) => bundle.reverting_transaction_hashes.clone(),
+            SendBundleRequest::Beaver(bundle) => bundle.bundle.reverting_tx_hashes.clone(),
+            SendBundleRequest::Titan(bundle) => bundle.bundle.reverting_tx_hashes.clone(),
         }
     }
 }
