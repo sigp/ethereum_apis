@@ -1,0 +1,14 @@
+[package]
+name = "searcher-api-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+alloy-primitives = "0.8"
+alloy-rlp = "0.3"
+alloy-rpc-types-mev = "0.8"
+eyre = "0.6.12"
+serde_with = "3.12.0"
