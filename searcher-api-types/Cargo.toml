@@ -7,10 +7,8 @@ edition = "2021"
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-serde_with = "3.0.0"
 alloy-primitives = "0.8"
 alloy-rlp = "0.3"
 alloy-rpc-types-mev = "0.8"
-alloy-serde = "0.8"
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "1e965caf5fa176f244a31c0d2662ba1b590938db" } # Reth 1.2
 eyre = "0.6.12"
