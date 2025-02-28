@@ -1,8 +1,5 @@
 //! RPC types that are supported by Beaverbuild
-use alloy_primitives::{
-    hex::{self, FromHex},
-    Address, BlockNumber, Bytes, TxHash,
-};
+use alloy_primitives::{hex::FromHex, Address, BlockNumber, Bytes, TxHash};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 /// Bundle as recognised by Beaverbuild
@@ -38,7 +35,7 @@ impl BeaverBundle {
         Ok(Self {
             transactions: txs
                 .iter()
-                .map(|hex_string| Bytes::from_hex(hex_string))
+                .map(Bytes::from_hex)
                 .collect::<Result<Vec<Bytes>, _>>()?,
             block_number,
             ..Self::default()
