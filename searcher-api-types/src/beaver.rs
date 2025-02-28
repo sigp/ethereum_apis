@@ -1,8 +1,8 @@
 //! RPC types that are supported by Beaverbuild
-use alloy_primitives::{hex, Address, BlockNumber, TxHash};
-use alloy_rlp::Decodable;
-use eyre::eyre;
-use reth_primitives::TransactionSigned;
+use alloy_primitives::{
+    hex::{self, FromHex},
+    Address, BlockNumber, Bytes, TxHash,
+};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 /// Bundle as recognised by Beaverbuild
@@ -12,7 +12,7 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 #[derive(Clone, Debug, Default)]
 pub struct BeaverBundle {
     /// List of hex-encoded, raw transactions. Can be empty for cancelling a bundle
-    pub transactions: Vec<TransactionSigned>,
+    pub transactions: Vec<Bytes>,
     /// The block that this bundle will be valid for. 0 means it's valid for the next block (and only this one)
     pub block_number: BlockNumber,
     /// If specified and >0, the bundle will only be valid if the block timestamp is greater or equal to `minTimestamp`
@@ -38,15 +38,8 @@ impl BeaverBundle {
         Ok(Self {
             transactions: txs
                 .iter()
-                .map(|hex_string| {
-                    hex::decode(hex_string)
-                        .map_err(|e| eyre!("Invalid hexadecimal string: {e:?}"))
-                        .and_then(|decoded_bytes| {
-                            TransactionSigned::decode(&mut decoded_bytes.as_slice())
-                                .map_err(|e| eyre!("Illegal RLP bytes for transaction: {e:?}"))
-                        })
-                })
-                .collect::<Result<Vec<TransactionSigned>, _>>()?,
+                .map(|hex_string| Bytes::from_hex(hex_string))
+                .collect::<Result<Vec<Bytes>, _>>()?,
             block_number,
             ..Self::default()
         })
@@ -59,14 +52,7 @@ impl Serialize for BeaverBundle {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("BeaverBundle", 2)?;
-        state.serialize_field(
-            "txs",
-            &self
-                .transactions
-                .iter()
-                .map(|tx| hex::encode(alloy_rlp::encode(tx)))
-                .collect::<Vec<String>>(),
-        )?;
+        state.serialize_field("txs", &self.transactions)?;
         state.serialize_field("blockNumber", &format!("0x{:x}", self.block_number))?;
 
         if let Some(ref t) = self.min_timestamp {
