@@ -1,6 +1,6 @@
 use alloy_primitives::{BlockNumber, Bytes, TxHash};
 use alloy_rlp::encode;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub mod beaver;
 pub mod flashbots;
@@ -13,7 +13,7 @@ pub use titan::*;
 /// Universal bundle submission RPC type
 ///
 /// This type represents what Lynx accepts from external order flow providers.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum SendBundleRequest {
     /// Flashbots bundle
