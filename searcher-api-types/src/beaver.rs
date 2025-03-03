@@ -1,7 +1,7 @@
 //! RPC types that are supported by Beaverbuild
 use alloy_primitives::{hex::FromHex, Address, BlockNumber, Bytes, TxHash};
 use alloy_rpc_types_mev::EthSendBundle;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 
 /// Bundle as recognised by Beaverbuild
@@ -10,7 +10,7 @@ use serde_with::{serde_as, skip_serializing_none};
 /// has been omitted.
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct BeaverBundle {
     #[serde(flatten)]
     pub bundle: EthSendBundle,
