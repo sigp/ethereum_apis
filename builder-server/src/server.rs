@@ -10,16 +10,18 @@ use axum::{
 };
 use builder_api_types::{
     EthSpec, ExecutionBlockHash, PublicKeyBytes, SignedBlindedBeaconBlock,
-    SignedValidatorRegistrationData, Slot,
+    SignedValidatorRegistrationData, Slot, VariableList,
 };
 use ethereum_apis_common::{
-    build_response, build_response_with_headers, Accept, ContentType, JsonOrSszWithFork,
+    build_response, build_response_with_headers, Accept, ContentType, JsonOrSsz, JsonOrSszWithFork,
 };
 use http::{
     header::{ACCEPT, CONTENT_TYPE},
     HeaderMap,
 };
 use tracing::info;
+pub type ValidatorRegistrations<E: EthSpec> =
+    VariableList<SignedValidatorRegistrationData, <E as EthSpec>::ValidatorRegistryLimit>;
 
 use crate::builder::Builder;
 
@@ -48,14 +50,17 @@ where
 
 async fn register_validators<I, A, E>(
     State(api_impl): State<I>,
-    Json(registrations): Json<Vec<SignedValidatorRegistrationData>>,
+    JsonOrSsz(registrations): JsonOrSsz<Vec<SignedValidatorRegistrationData>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
-    let res = api_impl.as_ref().register_validators(registrations).await;
+    let res = api_impl
+        .as_ref()
+        .register_validators(registrations.to_vec())
+        .await;
     build_response(res)
 }
 
