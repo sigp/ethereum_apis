@@ -6,7 +6,7 @@ use axum::{
     http::StatusCode,
     response::Response,
     routing::{get, post},
-    Json, Router,
+    Router,
 };
 use builder_api_types::{
     EthSpec, ExecutionBlockHash, PublicKeyBytes, SignedBlindedBeaconBlock,
@@ -20,7 +20,7 @@ use http::{
     HeaderMap,
 };
 use tracing::info;
-pub type ValidatorRegistrations<E: EthSpec> =
+pub type ValidatorRegistrations<E> =
     VariableList<SignedValidatorRegistrationData, <E as EthSpec>::ValidatorRegistryLimit>;
 
 use crate::builder::Builder;
@@ -50,7 +50,7 @@ where
 
 async fn register_validators<I, A, E>(
     State(api_impl): State<I>,
-    JsonOrSsz(registrations): JsonOrSsz<Vec<SignedValidatorRegistrationData>>,
+    JsonOrSsz(registrations): JsonOrSsz<ValidatorRegistrations<E>>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
