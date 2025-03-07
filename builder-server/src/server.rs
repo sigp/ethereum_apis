@@ -19,7 +19,6 @@ use http::{
     header::{ACCEPT, CONTENT_TYPE},
     HeaderMap,
 };
-use tracing::info;
 pub type ValidatorRegistrations<E> =
     VariableList<SignedValidatorRegistrationData, <E as EthSpec>::ValidatorRegistryLimit>;
 
@@ -106,21 +105,14 @@ where
         .and_then(|value| value.to_str().ok())
         .unwrap_or("application/json");
     let content_type = match Accept::from_str(content_type_str) {
-        Ok(Accept::Ssz) => {
-            info!("REQUESTED SSZ");
-            ContentType::Ssz
-        }
-        _ => {
-            info!("REQUESTED JSON");
-            ContentType::Json
-        }
+        Ok(Accept::Ssz) => ContentType::Ssz,
+        _ => ContentType::Json,
     };
 
     let res = api_impl
         .as_ref()
         .get_header(slot, parent_hash, pubkey)
         .await;
-    tracing::info!("Got response from builder, constructing response");
     build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot))
 }
 
