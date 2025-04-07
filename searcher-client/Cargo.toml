@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 tokio = { workspace = true }
 
-alloy-rpc-types-mev = "0.8"
-eyre = "0.6.12"
-url = "2.5.4"
-jsonrpsee = { version = "0.24.8", features = ["jsonrpsee-http-client", "jsonrpsee-core"] }
+alloy-rpc-types-mev.workspace = true
+eyre.workspace = true
+url.workspace = true
+jsonrpsee = { workspace = true, features = ["jsonrpsee-http-client", "jsonrpsee-core"] }
 
 searcher-api-types = { path = "../searcher-api-types" }
-jsonrpsee-core = "0.24.8"
+jsonrpsee-core.workspace = true
 
