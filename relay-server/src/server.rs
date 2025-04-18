@@ -37,7 +37,6 @@ where
             "/relay/v1/builder/validators",
             get(get_validators::<I, A, E>),
         )
-        .route("/relay/v1/builder/headers", post(submit_header::<I, A, E>))
         .route(
             "/relay/v1/builder/cancel_bid",
             post(submit_cancellation::<I, A, E>),
