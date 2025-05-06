@@ -7,8 +7,8 @@ edition = "2021"
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-alloy-primitives = "0.8"
-alloy-rlp = "0.3"
-alloy-rpc-types-mev = "0.8"
-eyre = "0.6.12"
-serde_with = "3.12.0"
+alloy-primitives.workspace = true
+alloy-rlp.workspace = true
+alloy-rpc-types-mev.workspace = true
+eyre.workspace = true
+serde_with.workspace = true

@@ -178,6 +178,7 @@ pub struct TopBidUpdate {
 pub enum Filtering {
     Regional,
     Global,
+    None,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
