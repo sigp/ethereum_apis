@@ -18,7 +18,7 @@ members = [
 async-trait = "0.1"
 axum = { version = "0.8", features = ["ws"] }
 bytes = "1.6"
-eth2 = { git = "https://github.com/sigp/lighthouse.git", rev = "a2d5ee6689d16798d7b778bde065fa81d6649b57" }
+eth2 = { git = "https://github.com/sigp/lighthouse.git", rev = "f06d1d034615e71534204c091ee639f27e2e9b5c" }
 ethereum_serde_utils = "0.7"
 ethereum_ssz = "0.8"
 ethereum_ssz_derive = "0.8"
@@ -33,5 +33,5 @@ superstruct = "0.8"
 tokio = { version = "1", default-features = false, features = ["signal", "rt-multi-thread", "macros"] }
 tokio-tungstenite = "0.24.0"
 tracing = { version = "0.1", features = ["attributes"] }
-types = { git = "https://github.com/sigp/lighthouse.git", rev = "a2d5ee6689d16798d7b778bde065fa81d6649b57" }
+types = { git = "https://github.com/sigp/lighthouse.git", rev = "f06d1d034615e71534204c091ee639f27e2e9b5c" }
 rand = "0.8"
