@@ -50,7 +50,7 @@ mod test {
         let resp = res.unwrap();
         assert_eq!(
             resp.bundle_hash.to_string(),
-            "0xbfe05fa7cb2f9de981eeefe7246c9c9be6f69c3a3b33a05fdbf6afac42ddd294"
+            "0x09ea03143e742135ad06cac0b440f94c2113fbb99bd50710459b1815ea8994cf"
         );
     }
 }

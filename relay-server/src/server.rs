@@ -62,7 +62,7 @@ where
 async fn submit_block<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -78,7 +78,7 @@ where
 async fn submit_block_optimistic_v2<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,

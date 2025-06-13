@@ -11,34 +11,40 @@ members = [
   "relay-server",
   "searcher-api-types",
   "searcher-client",
-  "common"
+  "common",
 ]
 
 [workspace.dependencies]
 async-trait = "0.1"
 axum = { version = "0.8", features = ["ws"] }
 bytes = "1.6"
-eth2 = { git = "https://github.com/cakevm/lighthouse", rev="68776b6" }
+eth2 = { git = "https://github.com/cakevm/lighthouse", rev = "68776b6" }
 ethereum_serde_utils = "0.8.0"
 ethereum_ssz = "0.9.0"
 ethereum_ssz_derive = "0.9.0"
 eyre = "0.6.12"
 flate2 = "1.0"
 futures = "0.3.30"
-http = "1.2"
-jsonrpsee = "0.24.9"
-jsonrpsee-core = "0.24.9"
+http = "1.3"
+jsonrpsee = "0.25.1"
+jsonrpsee-core = "0.25.1"
 mediatype = "0.19.13"
-reqwest = { version = "0.12.12", features = ["json"] }
+reqwest = { version = "0.12.19", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 serde_with = "3.12.0"
 superstruct = "0.9.0"
-tokio = { version = "1", default-features = false, features = ["signal", "rt-multi-thread", "macros"] }
-tokio-tungstenite = "0.24.0"
+tokio = { version = "1", default-features = false, features = [
+  "signal",
+  "rt-multi-thread",
+  "macros",
+] }
+tokio-tungstenite = "0.26.2"
 tracing = { version = "0.1", features = ["attributes"] }
 url = "2.5.4"
 
 alloy-primitives = "1.0.0"
 alloy-rlp = "0.3.11"
-alloy-rpc-types-mev = "0.14.0"
+alloy-rpc-types-mev = "1.0.9"
+alloy-rpc-types-beacon = "1.0.9"
+alloy-rpc-types-engine = "1.0.9"

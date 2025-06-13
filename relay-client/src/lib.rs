@@ -103,7 +103,7 @@ impl RelayClient {
     pub async fn submit_block<E>(
         &self,
         query_params: &SubmitBlockQueryParams,
-        body: &SubmitBlockRequest<E>,
+        body: &SubmitBlockRequest,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -219,7 +219,7 @@ impl RelayClient {
     pub async fn submit_block_optimistic_v2<E>(
         &self,
         query_params: &SubmitBlockQueryParams,
-        body: &SubmitBlockRequest<E>,
+        body: &SubmitBlockRequest,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -281,7 +281,7 @@ impl RelayClient {
             match message {
                 Ok(Message::Text(text)) => match serde_json::from_str::<TopBidUpdate>(&text) {
                     Ok(update) => Some(Ok(update)),
-                    Err(e) => Some(Err(Error::InvalidJson(e, text))),
+                    Err(e) => Some(Err(Error::InvalidJson(e, text.as_str().to_string()))),
                 },
                 Ok(Message::Binary(bin)) => match serde_json::from_slice::<TopBidUpdate>(&bin) {
                     Ok(update) => Some(Ok(update)),
