@@ -4,12 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait.workspace = true
 axum.workspace = true
 bytes.workspace = true
 ethereum_ssz.workspace = true
 flate2.workspace = true
-futures.workspace = true
 http.workspace = true
 mediatype.workspace = true
 serde.workspace = true

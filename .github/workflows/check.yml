@@ -1,0 +1,60 @@
+name: check
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-job
+        with:
+          cache: false
+          components: rustfmt
+      - name: Install taplo
+        env:
+          version: "0.9.3"
+        # Fetching the binary is faster than cargo install
+        run: |
+          curl -Ls "https://github.com/tamasfe/taplo/releases/download/${{ env.version }}/taplo-full-linux-x86_64.gz" | \
+          gzip -d > taplo && \
+          chmod +x taplo && \
+          sudo mv taplo /usr/local/bin/taplo
+      - run: just check-fmt
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-job
+        with:
+          components: clippy
+      - run: just lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-job
+      - run: just test
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-job
+      - run: just audit
+
+  unused-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-job
+      - run: just udeps

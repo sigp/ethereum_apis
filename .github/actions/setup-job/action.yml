@@ -1,0 +1,23 @@
+name: "Setup job for this repo"
+description: "Installs rust toolchain, caching, and just"
+
+inputs:
+  cache:
+    description: Enables rust cache
+    required: false
+    default: "true"
+  components:
+    description: Comma-separated list of components to be additionally installed
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: ${{ inputs.components }}
+    - uses: taiki-e/install-action@just
+    - uses: Swatinem/rust-cache@v2
+      if: ${{ inputs.cache == 'true' }}
+      with:
+        cache-on-failure: true

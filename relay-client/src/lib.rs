@@ -47,18 +47,14 @@ pub struct RelayClient {
 
 impl RelayClient {
     pub fn new(base_url: Url) -> Self {
-        Self {
-            client: Client::new(),
-            base_url,
-        }
+        Self { client: Client::new(), base_url }
     }
 
     async fn build_response<T>(&self, response: reqwest::Response) -> Result<T, Error>
     where
         T: for<'de> Deserialize<'de>,
     {
-        self.build_response_with_headers(response, <_>::default(), <_>::default())
-            .await
+        self.build_response_with_headers(response, <_>::default(), <_>::default()).await
     }
 
     async fn build_response_with_headers<T>(
@@ -70,10 +66,9 @@ impl RelayClient {
     where
         T: for<'de> Deserialize<'de>,
     {
-        response.headers_mut().insert(
-            CONTENT_TYPE,
-            HeaderValue::from_str(content_type.to_string().as_str())?,
-        );
+        response
+            .headers_mut()
+            .insert(CONTENT_TYPE, HeaderValue::from_str(content_type.to_string().as_str())?);
 
         match content_encoding {
             ContentEncoding::Gzip => {
@@ -103,7 +98,7 @@ impl RelayClient {
     pub async fn submit_block<E>(
         &self,
         query_params: &SubmitBlockQueryParams,
-        body: &SubmitBlockRequest<E>,
+        body: &SubmitBlockRequest,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -114,16 +109,9 @@ impl RelayClient {
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["relay", "v1", "builder", "blocks"]);
-        let response = self
-            .client
-            .post(url)
-            .query(query_params)
-            .json(body)
-            .send()
-            .await?;
+        let response = self.client.post(url).query(query_params).json(body).send().await?;
 
-        self.build_response_with_headers(response, content_type, content_encoding)
-            .await
+        self.build_response_with_headers(response, content_type, content_encoding).await
     }
 
     pub async fn get_validators<E>(&self) -> Result<GetValidatorsResponse, Error>
@@ -131,9 +119,12 @@ impl RelayClient {
         E: EthSpec,
     {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["relay", "v1", "builder", "validators"]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "builder",
+            "validators",
+        ]);
         let response = self.client.get(url).send().await?;
 
         self.build_response(response).await
@@ -144,15 +135,13 @@ impl RelayClient {
         query_params: &GetDeliveredPayloadsQueryParams,
     ) -> Result<GetDeliveredPayloadsResponse, Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&[
-                "relay",
-                "v1",
-                "data",
-                "bidtraces",
-                "proposer_payload_delivered",
-            ]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "data",
+            "bidtraces",
+            "proposer_payload_delivered",
+        ]);
         let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
@@ -163,15 +152,13 @@ impl RelayClient {
         query_params: &GetReceivedBidsQueryParams,
     ) -> Result<GetReceivedBidsResponse, Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&[
-                "relay",
-                "v1",
-                "data",
-                "bidtraces",
-                "builder_blocks_received",
-            ]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "data",
+            "bidtraces",
+            "builder_blocks_received",
+        ]);
         let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
@@ -182,9 +169,12 @@ impl RelayClient {
         query_params: &GetValidatorRegistrationQueryParams,
     ) -> Result<GetValidatorRegistrationResponse, Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["relay", "v1", "data", "validator_registration"]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "data",
+            "validator_registration",
+        ]);
         let response = self.client.get(url).query(query_params).send().await?;
 
         self.build_response(response).await
@@ -204,22 +194,15 @@ impl RelayClient {
         url.path_segments_mut()
             .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
             .extend(&["relay", "v1", "builder", "headers"]);
-        let response = self
-            .client
-            .post(url)
-            .query(query_params)
-            .json(body)
-            .send()
-            .await?;
+        let response = self.client.post(url).query(query_params).json(body).send().await?;
 
-        self.build_response_with_headers(response, content_type, content_encoding)
-            .await
+        self.build_response_with_headers(response, content_type, content_encoding).await
     }
 
     pub async fn submit_block_optimistic_v2<E>(
         &self,
         query_params: &SubmitBlockQueryParams,
-        body: &SubmitBlockRequest<E>,
+        body: &SubmitBlockRequest,
         content_type: ContentType,
         content_encoding: ContentEncoding,
     ) -> Result<(), Error>
@@ -227,19 +210,15 @@ impl RelayClient {
         E: EthSpec,
     {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["relay", "v1", "builder", "blocks_optimistic_v2"]);
-        let response = self
-            .client
-            .post(url)
-            .query(query_params)
-            .json(body)
-            .send()
-            .await?;
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "builder",
+            "blocks_optimistic_v2",
+        ]);
+        let response = self.client.post(url).query(query_params).json(body).send().await?;
 
-        self.build_response_with_headers(response, content_type, content_encoding)
-            .await
+        self.build_response_with_headers(response, content_type, content_encoding).await
     }
 
     pub async fn submit_cancellation(
@@ -249,13 +228,15 @@ impl RelayClient {
         content_encoding: ContentEncoding,
     ) -> Result<(), Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["relay", "v1", "builder", "cancel_bid"]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "relay",
+            "v1",
+            "builder",
+            "cancel_bid",
+        ]);
         let response = self.client.post(url).json(body).send().await?;
 
-        self.build_response_with_headers(response, content_type, content_encoding)
-            .await
+        self.build_response_with_headers(response, content_type, content_encoding).await
     }
 
     pub async fn subscribe_top_bids(
@@ -269,19 +250,16 @@ impl RelayClient {
             "https" => "wss",
             _ => return Err(Error::InvalidUrl(self.base_url.clone())),
         };
-        url.set_scheme(ws_scheme)
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?;
+        url.set_scheme(ws_scheme).map_err(|_| Error::InvalidUrl(self.base_url.clone()))?;
 
-        let (ws_stream, _) = connect_async(url.as_str())
-            .await
-            .map_err(Error::WebSocket)?;
+        let (ws_stream, _) = connect_async(url.as_str()).await.map_err(Error::WebSocket)?;
         let (_, read) = ws_stream.split();
 
         let stream = read.filter_map(|message| async {
             match message {
                 Ok(Message::Text(text)) => match serde_json::from_str::<TopBidUpdate>(&text) {
                     Ok(update) => Some(Ok(update)),
-                    Err(e) => Some(Err(Error::InvalidJson(e, text))),
+                    Err(e) => Some(Err(Error::InvalidJson(e, text.as_str().to_string()))),
                 },
                 Ok(Message::Binary(bin)) => match serde_json::from_slice::<TopBidUpdate>(&bin) {
                     Ok(update) => Some(Ok(update)),
