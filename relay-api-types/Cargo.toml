@@ -6,8 +6,12 @@ edition = "2021"
 [dependencies]
 beacon-api-types = { path = "../beacon-api-types" }
 ethereum_serde_utils.workspace = true
+ethereum_ssz.workspace = true
 ethereum_ssz_derive.workspace = true
 serde.workspace = true
 
 # Alloy dependencies
 alloy-rpc-types-beacon = { workspace = true, features = ["ssz"] }
+
+[package.metadata.cargo-machete]
+ignored = ["ethereum_ssz"]
