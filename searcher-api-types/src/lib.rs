@@ -52,18 +52,12 @@ impl SendBundleRequest {
     pub fn tx_bytes(&self) -> Vec<Bytes> {
         match self {
             SendBundleRequest::Flashbots(bundle) => bundle.txs.clone(),
-            SendBundleRequest::Beaver(bundle) => bundle
-                .bundle
-                .txs
-                .iter()
-                .map(|tx| encode(tx).into())
-                .collect(),
-            SendBundleRequest::Titan(bundle) => bundle
-                .bundle
-                .txs
-                .iter()
-                .map(|tx| encode(tx).into())
-                .collect(),
+            SendBundleRequest::Beaver(bundle) => {
+                bundle.bundle.txs.iter().map(|tx| encode(tx).into()).collect()
+            }
+            SendBundleRequest::Titan(bundle) => {
+                bundle.bundle.txs.iter().map(|tx| encode(tx).into()).collect()
+            }
         }
     }
 

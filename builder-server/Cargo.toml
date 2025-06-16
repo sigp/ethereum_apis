@@ -6,17 +6,12 @@ edition = "2021"
 [dependencies]
 async-trait.workspace = true
 axum.workspace = true
-bytes.workspace = true
-ethereum_ssz.workspace = true
-flate2.workspace = true
-futures.workspace = true
 http.workspace = true
 builder-api-types = { path = "../builder-api-types" }
 ethereum-apis-common = { path = "../common" }
-serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
-tracing.workspace = true
 
 [dev-dependencies]
 tower = "0.5.2"
+ethereum_ssz.workspace = true

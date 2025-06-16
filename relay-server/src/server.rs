@@ -33,27 +33,15 @@ where
             post(submit_block_optimistic_v2::<I, A, E>),
         )
         .route("/relay/v1/builder/headers", post(submit_header::<I, A, E>))
-        .route(
-            "/relay/v1/builder/validators",
-            get(get_validators::<I, A, E>),
-        )
-        .route(
-            "/relay/v1/builder/cancel_bid",
-            post(submit_cancellation::<I, A, E>),
-        )
+        .route("/relay/v1/builder/validators", get(get_validators::<I, A, E>))
+        .route("/relay/v1/builder/cancel_bid", post(submit_cancellation::<I, A, E>))
         .route("/relay/v1/builder/top_bids", get(get_top_bids::<I, A, E>))
-        .route(
-            "/relay/v1/data/bidtraces/builder_blocks_received",
-            get(get_received_bids::<I, A>),
-        )
+        .route("/relay/v1/data/bidtraces/builder_blocks_received", get(get_received_bids::<I, A>))
         .route(
             "/relay/v1/data/bidtraces/proposer_payload_delivered",
             get(get_delivered_payloads::<I, A>),
         )
-        .route(
-            "/relay/v1/data/validator_registration",
-            get(get_validator_registration::<I, A>),
-        )
+        .route("/relay/v1/data/validator_registration", get(get_validator_registration::<I, A>))
         .with_state(api_impl)
 }
 
@@ -62,7 +50,7 @@ where
 async fn submit_block<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
@@ -78,17 +66,14 @@ where
 async fn submit_block_optimistic_v2<I, A, E>(
     Query(query_params): Query<SubmitBlockQueryParams>,
     State(api_impl): State<I>,
-    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest<E>>,
+    JsonOrSszMaybeGzipped(body): JsonOrSszMaybeGzipped<SubmitBlockRequest>,
 ) -> Result<Response<Body>, StatusCode>
 where
     E: EthSpec,
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
-    let result = api_impl
-        .as_ref()
-        .submit_block_optimistic_v2(query_params, body)
-        .await;
+    let result = api_impl.as_ref().submit_block_optimistic_v2(query_params, body).await;
     build_response(result)
 }
 
@@ -239,9 +224,6 @@ where
     I: AsRef<A> + Send + Sync,
     A: Data,
 {
-    let result = api_impl
-        .as_ref()
-        .get_validator_registration(query_params)
-        .await;
+    let result = api_impl.as_ref().get_validator_registration(query_params).await;
     build_response(result)
 }

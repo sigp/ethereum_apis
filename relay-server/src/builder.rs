@@ -22,7 +22,7 @@ pub trait Builder<E: EthSpec> {
     async fn submit_block(
         &self,
         query_params: SubmitBlockQueryParams,
-        body: SubmitBlockRequest<E>,
+        body: SubmitBlockRequest,
     ) -> Result<(), ErrorResponse>;
     /// Submit a new block header to the relay.
     ///
@@ -39,7 +39,7 @@ pub trait Builder<E: EthSpec> {
     async fn submit_block_optimistic_v2(
         &self,
         query_params: SubmitBlockQueryParams,
-        body: SubmitBlockRequest<E>,
+        body: SubmitBlockRequest,
     ) -> Result<(), ErrorResponse>;
 
     /// Submit a cancellation for all bids.

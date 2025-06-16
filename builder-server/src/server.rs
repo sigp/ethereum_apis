@@ -19,6 +19,7 @@ use http::{
     header::{ACCEPT, CONTENT_TYPE},
     HeaderMap,
 };
+
 pub type ValidatorRegistrations<E> =
     VariableList<SignedValidatorRegistrationData, <E as EthSpec>::ValidatorRegistryLimit>;
 
@@ -31,19 +32,10 @@ where
     A: Builder<E> + 'static,
 {
     Router::new()
-        .route(
-            "/eth/v1/builder/validators",
-            post(register_validators::<I, A, E>),
-        )
-        .route(
-            "/eth/v1/builder/blinded_blocks",
-            post(submit_blinded_block::<I, A, E>),
-        )
+        .route("/eth/v1/builder/validators", post(register_validators::<I, A, E>))
+        .route("/eth/v1/builder/blinded_blocks", post(submit_blinded_block::<I, A, E>))
         .route("/eth/v1/builder/status", get(get_status))
-        .route(
-            "/eth/v1/builder/header/{slot}/{parent_hash}/{pubkey}",
-            get(get_header::<I, A, E>),
-        )
+        .route("/eth/v1/builder/header/{slot}/{parent_hash}/{pubkey}", get(get_header::<I, A, E>))
         .with_state(api_impl)
 }
 
@@ -56,10 +48,7 @@ where
     I: AsRef<A> + Send + Sync,
     A: Builder<E>,
 {
-    let res = api_impl
-        .as_ref()
-        .register_validators(registrations.to_vec())
-        .await;
+    let res = api_impl.as_ref().register_validators(registrations.to_vec()).await;
     build_response(res)
 }
 
@@ -101,18 +90,14 @@ where
     A: Builder<E>,
 {
     let content_type_header = headers.get(ACCEPT);
-    let content_type_str = content_type_header
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("application/json");
+    let content_type_str =
+        content_type_header.and_then(|value| value.to_str().ok()).unwrap_or("application/json");
     let content_type = match Accept::from_str(content_type_str) {
         Ok(Accept::Ssz) => ContentType::Ssz,
         _ => ContentType::Json,
     };
 
-    let res = api_impl
-        .as_ref()
-        .get_header(slot, parent_hash, pubkey)
-        .await;
+    let res = api_impl.as_ref().get_header(slot, parent_hash, pubkey).await;
     build_response_with_headers(res, content_type, api_impl.as_ref().fork_name_at_slot(slot))
 }
 
@@ -131,7 +116,7 @@ mod tests {
     use ethereum_apis_common::{ErrorResponse, CONSENSUS_VERSION_HEADER};
     use http::{HeaderValue, Response};
     use ssz::Encode;
-    use std::{marker::PhantomData, usize};
+    use std::marker::PhantomData;
     use tower::ServiceExt;
 
     pub const PREFERENCE_ACCEPT_VALUE: &str =
@@ -150,7 +135,7 @@ mod tests {
 
     #[async_trait]
     impl<E: EthSpec> Builder<E> for DummyBuilder<E> {
-        fn fork_name_at_slot(&self, _slot: Slot) -> builder_api_types::ForkName {
+        fn fork_name_at_slot(&self, _slot: Slot) -> ForkName {
             ForkName::Deneb
         }
 
@@ -196,13 +181,11 @@ mod tests {
     }
 
     async fn send_request_and_assert_response(
-        request: http::request::Request<Body>,
+        request: Request<Body>,
         expected_status: StatusCode,
         check_headers: impl AsyncFn(Response<Body>),
     ) {
-        let app = new(DummyBuilder::<MainnetEthSpec> {
-            _phantom: PhantomData,
-        });
+        let app = new(DummyBuilder::<MainnetEthSpec> { _phantom: PhantomData });
 
         let response = app.oneshot(request).await.unwrap();
         // Assert status code
@@ -231,10 +214,7 @@ mod tests {
             Request::builder()
                 .uri("/eth/v1/builder/validators")
                 .method("POST")
-                .header(
-                    CONTENT_TYPE,
-                    HeaderValue::from_static("application/octet-stream"),
-                )
+                .header(CONTENT_TYPE, HeaderValue::from_static("application/octet-stream"))
                 .body(Body::from(dummy_registration.as_ssz_bytes()))
                 .unwrap(),
             StatusCode::OK,
@@ -277,7 +257,7 @@ mod tests {
             async |response| {
                 let headers = response.headers();
                 assert_eq!(headers.get(CONTENT_TYPE).unwrap(), HeaderValue::from_str(&ContentType::Ssz.to_string()).unwrap());
-                assert_eq!(headers.get(ethereum_apis_common::CONSENSUS_VERSION_HEADER).unwrap(), HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap());
+                assert_eq!(headers.get(CONSENSUS_VERSION_HEADER).unwrap(), HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap());
             }
         )
         .await;
@@ -301,7 +281,7 @@ mod tests {
             async |response| {
                 let headers = response.headers();
                 assert_eq!(headers.get(CONTENT_TYPE).unwrap(), HeaderValue::from_str(&ContentType::Json.to_string()).unwrap());
-                assert_eq!(headers.get(ethereum_apis_common::CONSENSUS_VERSION_HEADER).unwrap(), HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap());
+                assert_eq!(headers.get(CONSENSUS_VERSION_HEADER).unwrap(), HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap());
             }
         )
         .await;
@@ -319,11 +299,8 @@ mod tests {
             Request::builder()
                 .uri("/eth/v1/builder/blinded_blocks")
                 .method("POST")
-                .header(
-                    CONTENT_TYPE,
-                    HeaderValue::from_static("application/octet-stream"),
-                )
-                .header(ACCEPT, HeaderValue::from_static(&PREFERENCE_ACCEPT_VALUE))
+                .header(CONTENT_TYPE, HeaderValue::from_static("application/octet-stream"))
+                .header(ACCEPT, HeaderValue::from_static(PREFERENCE_ACCEPT_VALUE))
                 .header(
                     CONSENSUS_VERSION_HEADER,
                     HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap(),
@@ -338,9 +315,7 @@ mod tests {
                     HeaderValue::from_str(&ContentType::Ssz.to_string()).unwrap()
                 );
                 assert_eq!(
-                    headers
-                        .get(ethereum_apis_common::CONSENSUS_VERSION_HEADER)
-                        .unwrap(),
+                    headers.get(CONSENSUS_VERSION_HEADER).unwrap(),
                     HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap()
                 );
 
@@ -348,13 +323,11 @@ mod tests {
                 let body = axum::body::to_bytes(response.into_body(), usize::MAX)
                     .await
                     .expect("should get bytes response");
-                assert!(
-                    FullPayloadContents::<MainnetEthSpec>::from_ssz_bytes_by_fork(
-                        &body,
-                        ForkName::Deneb
-                    )
-                    .is_ok()
-                );
+                assert!(FullPayloadContents::<MainnetEthSpec>::from_ssz_bytes_by_fork(
+                    &body,
+                    ForkName::Deneb
+                )
+                .is_ok());
             },
         )
         .await;
@@ -380,9 +353,7 @@ mod tests {
                     HeaderValue::from_str(&ContentType::Json.to_string()).unwrap()
                 );
                 assert_eq!(
-                    headers
-                        .get(ethereum_apis_common::CONSENSUS_VERSION_HEADER)
-                        .unwrap(),
+                    headers.get(CONSENSUS_VERSION_HEADER).unwrap(),
                     HeaderValue::from_str(&ForkName::Deneb.to_string()).unwrap()
                 );
 

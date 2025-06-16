@@ -1,0 +1,43 @@
+include = [
+    "Cargo.toml",
+    "crates/**/Cargo.toml",
+    "rust-toolchain.toml",
+    "rustfmt.toml",
+    "taplo.toml",
+]
+
+
+[formatting]
+align_comments = false
+allowed_blank_lines = 2
+array_trailing_comma = true
+column_width = 100
+compact_arrays = true
+indent_string = "    " # 4 spaces
+reorder_arrays = true
+reorder_keys = true
+
+[[rule]]
+# Do not reorder package section in Cargo.toml of crates to keep name and version on top
+formatting = { reorder_keys = false }
+keys = ["package"]
+
+[[rule]]
+# test-cases in testing
+formatting = { reorder_arrays = false }
+keys = ["assertions", "atoms", "atoms.bundles", "settings"]
+
+[[rule]]
+# Cargo.toml of crates
+keys = ["build-dependencies", "dependencies", "dev-dependencies", "features", "package"]
+
+[[rule]]
+# Cargo.toml of workspace
+keys = [
+    "profile.maxperf",
+    "profile.profiling",
+    "profile.release",
+    "profile.test",
+    "workspace.dependencies",
+    "workspace.package",
+]

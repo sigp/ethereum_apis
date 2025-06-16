@@ -35,10 +35,7 @@ pub struct BuilderClient {
 
 impl BuilderClient {
     pub fn new(base_url: Url) -> Self {
-        Self {
-            client: Client::new(),
-            base_url,
-        }
+        Self { client: Client::new(), base_url }
     }
 
     async fn build_response_with_headers<T>(
@@ -90,9 +87,12 @@ impl BuilderClient {
         registrations: &[SignedValidatorRegistrationData],
     ) -> Result<(), Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["eth", "v1", "builder", "validators"]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "eth",
+            "v1",
+            "builder",
+            "validators",
+        ]);
 
         let response = self.client.post(url).json(registrations).send().await?;
 
@@ -106,37 +106,24 @@ impl BuilderClient {
         fork_name: ForkName,
     ) -> Result<ExecutionPayload<E>, Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&["eth", "v1", "builder", "blinded_blocks"]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "eth",
+            "v1",
+            "builder",
+            "blinded_blocks",
+        ]);
 
         let mut headers = HeaderMap::new();
-        headers.insert(
-            CONTENT_TYPE,
-            HeaderValue::from_str(&content_type.to_string()).unwrap(),
-        );
+        headers.insert(CONTENT_TYPE, HeaderValue::from_str(&content_type.to_string()).unwrap());
 
         let response = match content_type {
-            ContentType::Json => {
-                self.client
-                    .post(url)
-                    .headers(headers)
-                    .json(block)
-                    .send()
-                    .await?
-            }
+            ContentType::Json => self.client.post(url).headers(headers).json(block).send().await?,
             ContentType::Ssz => {
-                self.client
-                    .post(url)
-                    .headers(headers)
-                    .body(block.as_ssz_bytes())
-                    .send()
-                    .await?
+                self.client.post(url).headers(headers).body(block.as_ssz_bytes()).send().await?
             }
         };
 
-        self.build_response_with_headers(response, content_type, fork_name)
-            .await
+        self.build_response_with_headers(response, content_type, fork_name).await
     }
 
     pub async fn get_header<E: EthSpec>(
@@ -148,28 +135,22 @@ impl BuilderClient {
         fork_name: ForkName,
     ) -> Result<SignedBuilderBid<E>, Error> {
         let mut url = self.base_url.clone();
-        url.path_segments_mut()
-            .map_err(|_| Error::InvalidUrl(self.base_url.clone()))?
-            .extend(&[
-                "eth",
-                "v1",
-                "builder",
-                "header",
-                &slot.to_string(),
-                &parent_hash.to_string(),
-                &pubkey.to_string(),
-            ]);
+        url.path_segments_mut().map_err(|_| Error::InvalidUrl(self.base_url.clone()))?.extend(&[
+            "eth",
+            "v1",
+            "builder",
+            "header",
+            &slot.to_string(),
+            &parent_hash.to_string(),
+            &pubkey.to_string(),
+        ]);
 
         let mut headers = HeaderMap::new();
-        headers.insert(
-            ACCEPT,
-            HeaderValue::from_str(&content_type.to_string()).unwrap(),
-        );
+        headers.insert(ACCEPT, HeaderValue::from_str(&content_type.to_string()).unwrap());
 
         let response = self.client.get(url).headers(headers).send().await?;
 
-        self.build_response_with_headers(response, content_type, fork_name)
-            .await
+        self.build_response_with_headers(response, content_type, fork_name).await
     }
 
     pub async fn get_status(&self) -> Result<(), Error> {

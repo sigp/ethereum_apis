@@ -1,7 +1,9 @@
-pub use beacon_api_types::*;
 use serde::{Deserialize, Serialize};
 use serde_utils::quoted_u64::Quoted;
 use ssz_derive::{Decode, Encode};
+
+pub use alloy_rpc_types_beacon::relay::SubmitBlockRequest;
+pub use beacon_api_types::*;
 
 // Builder API requests
 
@@ -9,49 +11,6 @@ use ssz_derive::{Decode, Encode};
 pub struct SubmitBlockQueryParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cancellations: Option<bool>,
-}
-
-#[superstruct(
-    variants(Bellatrix, Capella, Deneb, Electra),
-    variant_attributes(
-        derive(Debug, Clone, Serialize, Deserialize, Encode, Decode),
-        serde(bound = "E: EthSpec", deny_unknown_fields),
-    ),
-    map_into(ExecutionPayload),
-    map_ref_into(ExecutionPayload)
-)]
-#[derive(Debug, Clone, Serialize, Deserialize, Encode)]
-#[serde(bound = "E: EthSpec", untagged)]
-#[ssz(enum_behaviour = "transparent")]
-pub struct SubmitBlockRequest<E: EthSpec> {
-    pub message: BidTraceV1,
-    #[superstruct(flatten)]
-    pub execution_payload: ExecutionPayload<E>,
-    pub signature: Signature,
-    #[superstruct(only(Deneb))]
-    pub blobs_bundle: BlobsBundle<E>,
-}
-
-impl<E: EthSpec> ssz::Decode for SubmitBlockRequest<E> {
-    fn is_ssz_fixed_len() -> bool {
-        false
-    }
-
-    // No Eth-Consensus-Types specified https://github.com/flashbots/relay-specs/issues/36
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
-        let Ok(req) = SubmitBlockRequestElectra::from_ssz_bytes(bytes) else {
-            let Ok(req) = SubmitBlockRequestDeneb::from_ssz_bytes(bytes) else {
-                let Ok(req) = SubmitBlockRequestCapella::from_ssz_bytes(bytes) else {
-                    return Ok(Self::Bellatrix(
-                        SubmitBlockRequestBellatrix::from_ssz_bytes(bytes)?,
-                    ));
-                };
-                return Ok(Self::Capella(req));
-            };
-            return Ok(Self::Deneb(req));
-        };
-        Ok(Self::Electra(req))
-    }
 }
 
 // Data API requests

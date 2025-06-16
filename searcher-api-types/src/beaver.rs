@@ -31,10 +31,7 @@ pub fn bundle_from_rlp_hex(
     block_number: BlockNumber,
 ) -> eyre::Result<EthSendBundle> {
     Ok(EthSendBundle {
-        txs: txs
-            .iter()
-            .map(Bytes::from_hex)
-            .collect::<Result<Vec<Bytes>, _>>()?,
+        txs: txs.iter().map(Bytes::from_hex).collect::<Result<Vec<Bytes>, _>>()?,
         block_number,
         ..EthSendBundle::default()
     })
@@ -53,21 +50,13 @@ mod test {
         );
 
         assert!(serde_json::to_string(&BeaverBundle {
-            bundle: EthSendBundle {
-                txs: vec![],
-                block_number: 21862873,
-                ..Default::default()
-            },
+            bundle: EthSendBundle { txs: vec![], block_number: 21862873, ..Default::default() },
             ..Default::default()
         })
         .is_ok());
         assert_eq!(
             serde_json::to_string(&BeaverBundle {
-                bundle: EthSendBundle {
-                    txs: vec![],
-                    block_number: 21862873,
-                    ..Default::default()
-                },
+                bundle: EthSendBundle { txs: vec![], block_number: 21862873, ..Default::default() },
                 ..Default::default()
             })
             .unwrap(),

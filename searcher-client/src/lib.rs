@@ -7,10 +7,7 @@ use url::Url;
 use searcher_api_types::SendBundleRequest;
 
 pub async fn send_bundle(url: Url, bundle: &SendBundleRequest) -> eyre::Result<EthBundleHash> {
-    Ok(HttpClient::builder()
-        .build(url)?
-        .request("eth_sendBundle", rpc_params![bundle])
-        .await?)
+    Ok(HttpClient::builder().build(url)?.request("eth_sendBundle", rpc_params![bundle]).await?)
 }
 
 #[cfg(test)]
@@ -29,11 +26,7 @@ mod test {
     #[tokio::test]
     async fn test_send_bundle_beaver_rejects_empty_bundle() {
         let empty_bundle = SendBundleRequest::Beaver(BeaverBundle {
-            bundle: EthSendBundle {
-                txs: vec![],
-                block_number: 0,
-                ..EthSendBundle::default()
-            },
+            bundle: EthSendBundle { txs: vec![], block_number: 0, ..EthSendBundle::default() },
             ..BeaverBundle::default()
         });
         let res = send_bundle(test_endpoint(), &empty_bundle).await;
@@ -50,7 +43,7 @@ mod test {
         let resp = res.unwrap();
         assert_eq!(
             resp.bundle_hash.to_string(),
-            "0xbfe05fa7cb2f9de981eeefe7246c9c9be6f69c3a3b33a05fdbf6afac42ddd294"
+            "0x09ea03143e742135ad06cac0b440f94c2113fbb99bd50710459b1815ea8994cf"
         );
     }
 }

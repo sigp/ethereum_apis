@@ -173,9 +173,8 @@ where
 
         if let Some(content_type) = content_type {
             if content_type.starts_with("application/octet-stream") {
-                let bytes = Bytes::from_request(req, state)
-                    .await
-                    .map_err(IntoResponse::into_response)?;
+                let bytes =
+                    Bytes::from_request(req, state).await.map_err(IntoResponse::into_response)?;
                 return T::from_ssz_bytes(&bytes)
                     .map(Ssz)
                     .map_err(|_| StatusCode::BAD_REQUEST.into_response());
@@ -199,16 +198,12 @@ where
 
     async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
         let headers = req.headers().clone();
-        let content_type = headers
-            .get(CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok());
+        let content_type = headers.get(CONTENT_TYPE).and_then(|value| value.to_str().ok());
         let fork_name = headers
             .get(CONSENSUS_VERSION_HEADER)
             .and_then(|value| ForkName::from_str(value.to_str().unwrap()).ok());
 
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
+        let bytes = Bytes::from_request(req, _state).await.map_err(IntoResponse::into_response)?;
 
         if let Some(content_type) = content_type {
             if content_type.starts_with(&ContentType::Json.to_string()) {
@@ -241,13 +236,9 @@ where
 
     async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
         let headers = req.headers().clone();
-        let content_type = headers
-            .get(CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok());
+        let content_type = headers.get(CONTENT_TYPE).and_then(|value| value.to_str().ok());
 
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
+        let bytes = Bytes::from_request(req, _state).await.map_err(IntoResponse::into_response)?;
 
         if let Some(content_type) = content_type {
             if content_type.starts_with(&ContentType::Json.to_string()) {
@@ -280,16 +271,10 @@ where
 
     async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
         let headers = req.headers().clone();
-        let content_type = headers
-            .get(CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok());
-        let content_encoding = headers
-            .get(CONTENT_ENCODING)
-            .and_then(|value| value.to_str().ok());
+        let content_type = headers.get(CONTENT_TYPE).and_then(|value| value.to_str().ok());
+        let content_encoding = headers.get(CONTENT_ENCODING).and_then(|value| value.to_str().ok());
 
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
+        let bytes = Bytes::from_request(req, _state).await.map_err(IntoResponse::into_response)?;
 
         let decoded_bytes = if content_encoding == Some(&ContentEncoding::Gzip.to_string()) {
             let mut decoder = GzDecoder::new(&bytes[..]);
@@ -383,11 +368,7 @@ pub struct ErrorResponse {
 }
 
 pub fn custom_internal_err(message: String) -> ErrorResponse {
-    ErrorResponse {
-        code: 500,
-        message,
-        stacktraces: None,
-    }
+    ErrorResponse { code: 500, message, stacktraces: None }
 }
 
 #[must_use]
@@ -409,9 +390,7 @@ where
             .and_then(|s| s.parse().ok())
             .ok_or(StatusCode::BAD_REQUEST.into_response())?;
 
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
+        let bytes = Bytes::from_request(req, _state).await.map_err(IntoResponse::into_response)?;
 
         let result = ForkVersionDeserialize::deserialize_by_fork::<serde_json::Value>(
             serde_json::de::from_slice(&bytes)
@@ -458,13 +437,7 @@ impl FromStr for Accept {
         const Q: &str = names::Q.as_str();
 
         media_type_list.into_iter().for_each(|item| {
-            if let Ok(MediaType {
-                ty,
-                subty,
-                suffix: _,
-                params,
-            }) = item
-            {
+            if let Ok(MediaType { ty, subty, suffix: _, params }) = item {
                 let q_accept = match (ty.as_str(), subty.as_str()) {
                     (APPLICATION, OCTET_STREAM) => Some(Accept::Ssz),
                     (APPLICATION, JSON) => Some(Accept::Json),

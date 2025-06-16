@@ -6,14 +6,10 @@ edition = "2021"
 [dependencies]
 async-trait.workspace = true
 axum.workspace = true
-bytes.workspace = true
-ethereum_ssz.workspace = true
 ethereum-apis-common = { path = "../common" }
-flate2.workspace = true
 futures.workspace = true
 http.workspace = true
 relay-api-types = { path = "../relay-api-types" }
-serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
 tracing.workspace = true
