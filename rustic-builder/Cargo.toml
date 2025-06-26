@@ -1,0 +1,25 @@
+[package]
+name = "rustic-builder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = {version = "4.5", features = ["derive"]}
+builder-server = { path = "../builder-server" }
+ethereum-apis-common = { path = "../common" }
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = {version = "0.3.8", features = ["env-filter"]}
+tracing-error = "0.2.0"
+tracing-core = "0.1.21"
+async-channel = "1.9.0"
+futures-channel = "0.3.21"
+axum.workspace = true
+hex = "0.4.3"
+types.workspace = true
+eth2.workspace = true
+execution_layer = { git = "https://github.com/sigp/lighthouse", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }
+task_executor = { git = "https://github.com/sigp/lighthouse", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }
+sensitive_url = { git = "https://github.com/sigp/lighthouse", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }
+eth2_network_config = { git = "https://github.com/sigp/lighthouse", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }

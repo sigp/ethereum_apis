@@ -9,6 +9,7 @@ members = [
   "relay-api-types",
   "relay-client",
   "relay-server",
+  "rustic-builder",
   "searcher-api-types",
   "searcher-client",
   "common"
@@ -18,7 +19,7 @@ members = [
 async-trait = "0.1"
 axum = { version = "0.8", features = ["ws"] }
 bytes = "1.6"
-eth2 = { git = "https://github.com/sigp/lighthouse.git", rev = "574b204bdb39fbfd7939c901a595647794b89274" }
+eth2 = { git = "https://github.com/sigp/lighthouse.git", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }
 ethereum_serde_utils = "0.7"
 ethereum_ssz = "0.8"
 ethereum_ssz_derive = "0.8"
@@ -33,5 +34,5 @@ superstruct = "0.8"
 tokio = { version = "1", default-features = false, features = ["signal", "rt-multi-thread", "macros"] }
 tokio-tungstenite = "0.24.0"
 tracing = { version = "0.1", features = ["attributes"] }
-types = { git = "https://github.com/sigp/lighthouse.git", rev = "574b204bdb39fbfd7939c901a595647794b89274" }
+types = { git = "https://github.com/sigp/lighthouse.git", rev = "a0a6b9300f11b4875e18d42bc4ce1f2787f4448b" }
 rand = "0.8"
