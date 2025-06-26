@@ -3,10 +3,7 @@ use axum::{
     extract::{FromRequest, Request},
     response::{IntoResponse, Response},
 };
-use beacon_api_types::{
-    fork_versioned_response::EmptyMetadata, ForkName, ForkVersionDecode, ForkVersionDeserialize,
-    ForkVersionedResponse,
-};
+use beacon_api_types::{ForkName, ForkVersionDecode, ForkVersionedResponse};
 use bytes::Bytes;
 use flate2::read::GzDecoder;
 use http::header::CONTENT_ENCODING;
@@ -16,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use ssz::Encode;
 use std::{fmt, io::Read, str::FromStr};
 use tracing::error;
+use types::beacon_response::EmptyMetadata;
 
 pub const CONSENSUS_VERSION_HEADER: &str = "Eth-Consensus-Version";
 
@@ -53,7 +51,7 @@ where
             let body_content = match content_type {
                 ContentType::Json => {
                     let body = ForkVersionedResponse {
-                        version: Some(fork_name),
+                        version: fork_name,
                         metadata: EmptyMetadata {},
                         data: body,
                     };
@@ -387,39 +385,6 @@ pub fn custom_internal_err(message: String) -> ErrorResponse {
         code: 500,
         message,
         stacktraces: None,
-    }
-}
-
-#[must_use]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct JsonConsensusVersionHeader<T>(pub T);
-
-impl<T, S> FromRequest<S> for JsonConsensusVersionHeader<T>
-where
-    T: ForkVersionDeserialize + 'static,
-    S: Send + Sync,
-{
-    type Rejection = Response;
-
-    async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
-        let headers = req.headers().clone();
-        let fork_name = headers
-            .get(CONSENSUS_VERSION_HEADER)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|s| s.parse().ok())
-            .ok_or(StatusCode::BAD_REQUEST.into_response())?;
-
-        let bytes = Bytes::from_request(req, _state)
-            .await
-            .map_err(IntoResponse::into_response)?;
-
-        let result = ForkVersionDeserialize::deserialize_by_fork::<serde_json::Value>(
-            serde_json::de::from_slice(&bytes)
-                .map_err(|_| StatusCode::BAD_REQUEST.into_response())?,
-            fork_name,
-        )
-        .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
-        Ok(Self(result))
     }
 }
 
