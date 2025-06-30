@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use ssz::Encode;
 use std::{fmt, io::Read, str::FromStr};
 use tracing::error;
-use types::beacon_response::EmptyMetadata;
+use types::{beacon_response::EmptyMetadata, ContextDeserialize};
 
 pub const CONSENSUS_VERSION_HEADER: &str = "Eth-Consensus-Version";
 
@@ -190,7 +190,10 @@ pub struct JsonOrSszWithFork<T>(pub T);
 
 impl<T, S> FromRequest<S> for JsonOrSszWithFork<T>
 where
-    T: serde::de::DeserializeOwned + ForkVersionDecode + 'static,
+    T: serde::de::DeserializeOwned
+        + ForkVersionDecode
+        + for<'de> ContextDeserialize<'de, ForkName>
+        + 'static,
     S: Send + Sync,
 {
     type Rejection = Response;
@@ -202,7 +205,8 @@ where
             .and_then(|value| value.to_str().ok());
         let fork_name = headers
             .get(CONSENSUS_VERSION_HEADER)
-            .and_then(|value| ForkName::from_str(value.to_str().unwrap()).ok());
+            .and_then(|value| ForkName::from_str(value.to_str().unwrap()).ok())
+            .ok_or(StatusCode::BAD_REQUEST.into_response())?;
 
         let bytes = Bytes::from_request(req, _state)
             .await
@@ -210,13 +214,14 @@ where
 
         if let Some(content_type) = content_type {
             if content_type.starts_with(&ContentType::Json.to_string()) {
-                let payload: T = serde_json::from_slice(&bytes)
+                let mut de = serde_json::Deserializer::from_slice(&bytes);
+                let payload = T::context_deserialize(&mut de, fork_name)
                     .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
                 return Ok(Self(payload));
             }
 
             if content_type.starts_with(&ContentType::Ssz.to_string()) {
-                let payload = T::from_ssz_bytes_by_fork(&bytes, fork_name.unwrap())
+                let payload = T::from_ssz_bytes_by_fork(&bytes, fork_name)
                     .map_err(|_| StatusCode::BAD_REQUEST.into_response())?;
                 return Ok(Self(payload));
             }
