@@ -42,7 +42,7 @@ tokio-tungstenite = "0.27.0"
 tracing = { version = "0.1", features = ["attributes"] }
 url = "2.5.4"
 
-alloy-primitives = "1.0.0"
+alloy-primitives = "1.2.1"
 alloy-rlp = "0.3.11"
 alloy-rpc-types-beacon = "1.0.9"
 alloy-rpc-types-mev = "1.0.9"
