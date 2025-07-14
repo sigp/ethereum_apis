@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use beacon_api_types::{
-    fork_versioned_response::EmptyMetadata, ForkName, ForkVersionDecode, ForkVersionDeserialize,
+    beacon_response::EmptyMetadata, ContextDeserialize, ForkName, ForkVersionDecode,
     ForkVersionedResponse,
 };
 use bytes::Bytes;
@@ -53,7 +53,7 @@ where
             let body_content = match content_type {
                 ContentType::Json => {
                     let body = ForkVersionedResponse {
-                        version: Some(fork_name),
+                        version: fork_name,
                         metadata: EmptyMetadata {},
                         data: body,
                     };
@@ -327,7 +327,7 @@ impl From<String> for ContentType {
         match value.as_str() {
             "application/json" => ContentType::Json,
             "application/octet-stream" => ContentType::Ssz,
-            _ => panic!("unknown content type: {}", value),
+            _ => panic!("unknown content type: {value}"),
         }
     }
 }
@@ -353,7 +353,7 @@ impl From<String> for ContentEncoding {
         match value.as_ref() {
             "gzip" => ContentEncoding::Gzip,
             "" => ContentEncoding::None,
-            _ => panic!("unknown content encoding: {}", value),
+            _ => panic!("unknown content encoding: {value}"),
         }
     }
 }
@@ -377,7 +377,7 @@ pub struct JsonConsensusVersionHeader<T>(pub T);
 
 impl<T, S> FromRequest<S> for JsonConsensusVersionHeader<T>
 where
-    T: ForkVersionDeserialize + 'static,
+    T: ContextDeserialize<'static, ForkName>,
     S: Send + Sync,
 {
     type Rejection = Response;
@@ -392,7 +392,7 @@ where
 
         let bytes = Bytes::from_request(req, _state).await.map_err(IntoResponse::into_response)?;
 
-        let result = ForkVersionDeserialize::deserialize_by_fork::<serde_json::Value>(
+        let result = ContextDeserialize::context_deserialize::<serde_json::Value>(
             serde_json::de::from_slice(&bytes)
                 .map_err(|_| StatusCode::BAD_REQUEST.into_response())?,
             fork_name,
